@@ -14,7 +14,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 #--- index route ---
-@bp.route('/')
+@bp.route('/m')
 @login_required
 def index():
     memoriais = Memorial.query.filter_by(user_id=current_user.id).all()
