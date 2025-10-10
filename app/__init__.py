@@ -5,6 +5,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
+from .utils import formatar_data
 
 # Crie as instâncias fora da função
 db = SQLAlchemy()
@@ -22,7 +23,7 @@ def create_app():
         SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'memorial.db'),
         SQLALCHEMY_TRACK_MODIFICATIONS=False
     )
-    
+    app.jinja_env.filters['formatadata'] = formatar_data
     try:
         os.makedirs(app.instance_path)
     except OSError:

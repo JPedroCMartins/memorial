@@ -112,7 +112,7 @@
             <img src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.logo_filename) }}"
                 alt="Foto de {{ memorial.nome }}" class="memorial-profile-pic">
             <h1 class="mt-3 display-4 fw-light">{{ memorial.nome }}</h1>
-            <p class="lead text-muted">{{ memorial.nascimento }} — {{ memorial.falecimento }}</p>
+            <p class="lead text-muted">{{ memorial.nascimento | formatadata }} — {{ memorial.falecimento | formatadata }}</p>
             <h4 class="fw-normal fst-italic mt-3">"{{ memorial.frase_efeito }}"</h4>
         </div>
 
