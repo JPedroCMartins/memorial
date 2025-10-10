@@ -22,7 +22,7 @@ def create_app():
         SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'memorial.db'),
         SQLALCHEMY_TRACK_MODIFICATIONS=False
     )
-
+    
     try:
         os.makedirs(app.instance_path)
     except OSError:
@@ -42,4 +42,6 @@ def create_app():
     from . import routes
     app.register_blueprint(routes.bp)
 
+    with app.app_context():
+        db.create_all() 
     return app
