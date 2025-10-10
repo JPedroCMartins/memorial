@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registro - J. Pedro C. Martins</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo_martins.png') }}">
+    <link href="" rel="stylesheet">
+
+    <style>
+        html, body {
+            height: 100%;
+        }
+        body {
+            display: flex;
+            align-items: center; /* Alinha verticalmente */
+            justify-content: center; /* Alinha horizontalmente */
+        }
+        .register-card {
+            width: 100%;
+            max-width: 450px; /* Largura máxima para o card */
+            padding: 2rem;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // Inicializa a biblioteca de animações
+        AOS.init();
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("registerForm").addEventListener("submit", function(event) {
+                let password = document.getElementById("password").value;
+                let confirmPassword = document.getElementById("confirm-password").value;
+
+                if (password !== confirmPassword) {
+                    alert("As senhas não coincidem! Por favor, tente novamente.");
+                    event.preventDefault(); // Impede o envio do formulário
+                }
+            });
+        });
+    </script>
+    
+    <div class="card shadow-lg register-card" data-aos="fade-up">
+        <div class="card-body">
+            <h2 class="card-title text-center mb-4">Registro</h2>
+            <form method="POST" id="registerForm">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nome</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-mail</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Senha</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirm-password" class="form-label">Confirmar Senha</label>
+                    <input type="password" class="form-control" id="confirm-password" name="confirm-password" required>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">Registrar</button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <a href="/login">Já tem uma conta? Faça login</a>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

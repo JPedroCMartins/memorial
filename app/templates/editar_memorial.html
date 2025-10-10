@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Editar memorial de: {{ memorial.nome }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="images/logo_martins.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        footer a {
+            color: #ffc107;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <style>
+        /* Opcional: Estilos para tornar o contêiner responsivo se necessário, embora img-fluid já ajude */
+        .midia-container {
+            position: relative;
+            /* Essencial para que o posicionamento absoluto do 'x' funcione */
+            display: inline-block;
+            /* Para que o contêiner se ajuste ao tamanho da imagem */
+            /* max-width: 100%; Se a imagem tiver um max-width, o contêiner também pode ter */
+        }
+
+        /* Estilo para a imagem dentro do contêiner */
+        .image-container img {
+            display: block;
+            /* Remove espaços extras abaixo da imagem */
+            width: 100%;
+            /* Garante que a imagem preencha o contêiner */
+            height: auto;
+            /* Mantém a proporção da imagem */
+        }
+
+        .media-container {
+            position: relative;
+            /* Essencial para o posicionamento do botão 'x' */
+            display: block;
+        }
+
+        .remove-media-btn {
+            position: absolute;
+            /* Posiciona o 'x' sobre o vídeo */
+            top: 10;
+            /* Distância do topo (um pouco maior para não sobrepor os controles do vídeo) */
+            left: -10px;
+            /* Distância da esquerda */
+            z-index: 20;
+            /* Garante que o 'x' fique ACIMA dos controles do player de vídeo */
+
+            /* Estilos visuais (cores, forma, etc.) */
+            background-color: red;
+            color: white !important;
+            /* !important pode ser necessário para sobrepor outros estilos */
+            font-family: Arial, sans-serif;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            padding: 0px 8px;
+            border-radius: 50%;
+            text-decoration: none;
+            line-height: 1.3;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .remove-media-btn:hover {
+            background-color: darkred;
+            transform: scale(1.1);
+        }
+
+        /* Estilo para o botão de remover (o 'x') */
+        .remove-image-btn {
+            position: absolute;
+            /* Posiciona o 'x' em relação ao .image-container */
+            top: 5px;
+            /* Ajuste a distância do topo */
+            left: 5px;
+            /* Ajuste a distância da esquerda */
+            background-color: red;
+            color: white;
+            font-family: Arial, sans-serif;
+            /* Fonte para o 'x' */
+            font-size: 1.2em;
+            /* Tamanho do 'x' */
+            font-weight: bold;
+            padding: 0px 8px;
+            /* Espaçamento interno para o 'x' */
+            border-radius: 50%;
+            /* Transforma o botão em um círculo */
+            text-decoration: none;
+            /* Remove o sublinhado padrão de links */
+            line-height: 1.2;
+            /* Ajusta a altura da linha para centralizar o 'x' */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            /* Uma pequena sombra para dar profundidade */
+            transition: background-color 0.3s ease;
+            /* Efeito de transição suave */
+            z-index: 10;
+            /* Garante que o botão fique acima da imagem */
+            cursor: pointer;
+            /* Indica que é clicável */
+        }
+
+        .remove-image-btn:hover {
+            background-color: darkred;
+            /* Cor ao passar o mouse */
+            transform: scale(1.1);
+            /* Um pequeno zoom ao passar o mouse */
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg bg-dark navbar-dark border-bottom">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="{{ url_for('static', filename='images/logo_martins.png') }}" class="img-fluid rounded-circle"
+                    alt="Logo" style="height: 50px;">
+                Memoriais
+            </a>
+        </div>
+    </nav>
+
+    <div class="container my-5 main-content">
+        <div class="row justify-content-center">
+            <div class="col-lg-10 col-xl-8">
+                <h2 class="mb-4">Editar Memorial de: {{memorial.nome}}</h2>
+
+                <form action="#" method="POST" enctype="multipart/form-data">
+                    <div class="card bg-body-tertiary border-secondary">
+                        <div class="card-body p-4">
+                            <h5 class="mb-3">Informações Básicas</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="nome" class="form-label">Nome Completo</label>
+                                        <input type="text" class="form-control" id="nome" name="nome"
+                                            value="{{ memorial.nome }}" required>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6 mb-3">
+                                            <label for="nascimento" class="form-label">Data de Nascimento</label>
+                                            <input type="date" class="form-control" id="nascimento" name="nascimento"
+                                                value="{{ memorial.nascimento }}" required>
+                                        </div>
+                                        <div class="col-6 mb-3">
+                                            <label for="falecimento" class="form-label">Data de Falecimento</label>
+                                            <input type="date" class="form-control" id="falecimento" name="falecimento"
+                                                value="{{ memorial.falecimento }}" required>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="frase_efeito" class="form-label">Frase de Efeito</label>
+                                        <input type="text" class="form-control" id="frase_efeito" name="frase_efeito"
+                                            placeholder="Ex: 'Uma vida dedicada à família...'"
+                                            value="{{memorial.frase_efeito}}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="biografia" class="form-label">Biografia</label>
+                                        <textarea class="form-control" id="biografia" name="biografia" rows="5"
+                                            required>{{ memorial.biografia }}</textarea>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="url_personalizada" class="form-label">URL Personalizada</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">p-martins.com/m/</span>
+                                            <input type="text" class="form-control" id="url_personalizada"
+                                                name="url_personalizada" placeholder="joao-silva"
+                                                value="{{memorial.url_personalizada}}" required>
+                                        </div>
+                                        <div class="form-text">Use apenas letras minúsculas, números e hífens.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr class="my-4">
+                            <h5 class="mb-3">Galeria de Imagens</h5>
+                            <div class="row g-3 mt-3">
+                                <div class="col-12 mb-2">
+                                    <strong>Imagens Atuais:</strong>
+                                </div>
+                                {% if memorial.gallery_images %}
+                                {% for image_file in memorial.gallery_images.split(',') %}
+                                <div class="col-6 col-md-4 col-lg-3">
+                                    <a href="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=image_file) }}"
+                                        target="_blank" class="gallery-item d-block">
+                                        <div class="midia-container">
+                                            <img src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=image_file) }}"
+                                                class="img-fluid" alt="Imagem do Memorial">
+                                            <a href="#" class="remove-image-btn"
+                                                onclick="delete_file('{{ memorial.id }}', '{{ image_file }}','image'); return false;">
+                                                &times;
+                                            </a>
+                                        </div>
+                                    </a>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted p-3">Nenhuma foto foi adicionada a este memorial.</p>
+                                {% endif %}
+
+                                <hr class="my-4">
+                            </div>
+                            <!-- GALERIA DE VIDEO -->
+                            <hr class="my-4">
+                            <h5 class="mb-3">Galeria de Vídeos</h5>
+                            <div class="row g-3 mt-3">
+                                <div class="col-12 mb-2">
+                                    <strong>Vídeos Atuais:</strong>
+                                </div>
+                                {% if memorial.gallery_videos %}
+                                {% for video_file in memorial.gallery_videos.split(',') %}
+                                <div class="col-12 col-md-6 mb-3">
+                                    <div class="media-container">
+                                        <video controls class="w-100">
+                                            <source
+                                                src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=video_file) }}">
+                                            Seu navegador não suporta o elemento de vídeo.
+                                        </video>
+
+                                        <a href="javascript:void(0);" class="remove-media-btn"
+                                            onclick="delete_file('{{ memorial.id }}', '{{ video_file }}', 'video')">
+                                            &times;
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted p-3">Nenhum vídeo foi adicionado a este memorial.</p>
+                                {% endif %}
+                            </div>
+                            <!---------------------->
+
+                            <!-- GALERIA DE AUDIO -->
+                            <hr class="my-4">
+                            <h5 class="mb-3">Gravações de Áudio</h5>
+                            <div class="row g-3 mt-3">
+                                <div class="col-12 mb-2">
+                                    <strong>Áudios Atuais:</strong>
+                                </div>
+                                {% if memorial.gallery_audios %}
+                                {% for audio_file in memorial.gallery_audios.split(',') %}
+                                <div class="col-12 col-md-6 mb-3">
+                                    <div class="media-container">
+                                        <audio controls class="w-100">
+                                            <source
+                                                src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=audio_file) }}">
+                                            Seu navegador não suporta o elemento de áudio.
+                                        </audio>
+
+                                        <a href="javascript:void(0);" class="remove-media-btn"
+                                            onclick="delete_file('{{ memorial.id }}', '{{ audio_file }}', 'audio')">
+                                            &times;
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <p class="text-muted p-3">Nenhum áudio foi adicionado a este memorial.</p>
+                                {% endif %}
+                            </div>
+                            <!---------------------->
+
+                            <!-- ADICIONAR NOVOS ITENS -->
+                            <hr class="my-4">
+                            <h5 class="mb-3">Adicionar Mais Midias</h5>
+                            <div class="row g-3 mt-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="logo_upload" class="form-label">Logo / Foto de Perfil</label>
+                                        <input class="form-control" type="file" id="logo_upload" name="logo_upload"
+                                            accept="image/*">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="banner_upload" class="form-label">Banner de Capa</label>
+                                        <input class="form-control" type="file" id="banner_upload" name="banner_upload"
+                                            accept="image/*">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="images_upload" class="form-label">Galeria de Imagens</label>
+                                        <input class="form-control" type="file" id="images_upload" name="images_upload"
+                                            accept="image/*" multiple>
+                                        <div class="form-text">Você pode selecionar várias imagens.</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="videos_upload" class="form-label">Galeria de Vídeos</label>
+                                        <input class="form-control" type="file" id="videos_upload" name="videos_upload"
+                                            accept="video/*" multiple>
+                                        <div class="form-text">Você pode selecionar vários vídeos.</div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="audios_upload" class="form-label">Gravações de Áudio</label>
+                                        <input class="form-control" type="file" id="audios_upload" name="audios_upload"
+                                            accept="audio/*" multiple>
+                                        <div class="form-text">Você pode selecionar vários áudios.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer p-3 text-end">
+                            <a href="#" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">Salvar Memorial</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-dark text-white text-center py-4">
+        <p class="mb-1">&copy; 2025 J. Pedro C. Martins. Todos os direitos reservados.</p>
+        <p class="mb-0">
+            Desenvolvido com <a href="https://python.org"><strong>Python</strong></a> e <a
+                href="https://getbootstrap.com/"><strong>Bootstrap.</strong></a>
+        </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function delete_file(memorial_id, filename, filetype) {
+            if (confirm('Tem certeza que deseja remover esta imagem?')) {
+                fetch(`/m/${memorial_id}/delete_file/${filename}/${filetype}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert('Erro ao remover a imagem.');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erro:', error);
+                        alert('Erro ao remover a imagem.');
+                    });
+            }
+        }
+    </script>
+</body>
+
+</html>
