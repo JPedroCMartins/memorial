@@ -8,125 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="images/logo_martins.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .main-content {
-            flex: 1;
-        }
-
-        footer a {
-            color: #ffc107;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            text-decoration: underline;
-        }
-    </style>
-    <style>
-        /* Opcional: Estilos para tornar o contêiner responsivo se necessário, embora img-fluid já ajude */
-        .midia-container {
-            position: relative;
-            /* Essencial para que o posicionamento absoluto do 'x' funcione */
-            display: inline-block;
-            /* Para que o contêiner se ajuste ao tamanho da imagem */
-            /* max-width: 100%; Se a imagem tiver um max-width, o contêiner também pode ter */
-        }
-
-        /* Estilo para a imagem dentro do contêiner */
-        .image-container img {
-            display: block;
-            /* Remove espaços extras abaixo da imagem */
-            width: 100%;
-            /* Garante que a imagem preencha o contêiner */
-            height: auto;
-            /* Mantém a proporção da imagem */
-        }
-
-        .media-container {
-            position: relative;
-            /* Essencial para o posicionamento do botão 'x' */
-            display: block;
-        }
-
-        .remove-media-btn {
-            position: absolute;
-            /* Posiciona o 'x' sobre o vídeo */
-            top: 10;
-            /* Distância do topo (um pouco maior para não sobrepor os controles do vídeo) */
-            left: -10px;
-            /* Distância da esquerda */
-            z-index: 20;
-            /* Garante que o 'x' fique ACIMA dos controles do player de vídeo */
-
-            /* Estilos visuais (cores, forma, etc.) */
-            background-color: red;
-            color: white !important;
-            /* !important pode ser necessário para sobrepor outros estilos */
-            font-family: Arial, sans-serif;
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: center;
-            padding: 0px 8px;
-            border-radius: 50%;
-            text-decoration: none;
-            line-height: 1.3;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-            transition: all 0.2s ease;
-            cursor: pointer;
-        }
-
-        .remove-media-btn:hover {
-            background-color: darkred;
-            transform: scale(1.1);
-        }
-
-        /* Estilo para o botão de remover (o 'x') */
-        .remove-image-btn {
-            position: absolute;
-            /* Posiciona o 'x' em relação ao .image-container */
-            top: 5px;
-            /* Ajuste a distância do topo */
-            left: 5px;
-            /* Ajuste a distância da esquerda */
-            background-color: red;
-            color: white;
-            font-family: Arial, sans-serif;
-            /* Fonte para o 'x' */
-            font-size: 1.2em;
-            /* Tamanho do 'x' */
-            font-weight: bold;
-            padding: 0px 8px;
-            /* Espaçamento interno para o 'x' */
-            border-radius: 50%;
-            /* Transforma o botão em um círculo */
-            text-decoration: none;
-            /* Remove o sublinhado padrão de links */
-            line-height: 1.2;
-            /* Ajusta a altura da linha para centralizar o 'x' */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-            /* Uma pequena sombra para dar profundidade */
-            transition: background-color 0.3s ease;
-            /* Efeito de transição suave */
-            z-index: 10;
-            /* Garante que o botão fique acima da imagem */
-            cursor: pointer;
-            /* Indica que é clicável */
-        }
-
-        .remove-image-btn:hover {
-            background-color: darkred;
-            /* Cor ao passar o mouse */
-            transform: scale(1.1);
-            /* Um pequeno zoom ao passar o mouse */
-        }
-    </style>
+    <link href="{{ url_for('static', filename='css/editar_memorial.css') }}" rel="stylesheet">
 </head>
 
 <body>
@@ -339,30 +221,7 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function delete_file(memorial_id, filename, filetype) {
-            if (confirm('Tem certeza que deseja remover esta imagem?')) {
-                fetch(`/m/${memorial_id}/delete_file/${filename}/${filetype}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload();
-                        } else {
-                            alert('Erro ao remover a imagem.');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro:', error);
-                        alert('Erro ao remover a imagem.');
-                    });
-            }
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/editar_memorial.js') }}"></script>
 </body>
 
 </html>
