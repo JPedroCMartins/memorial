@@ -1,0 +1,185 @@
+body {
+    background-color: #f0f2f5;
+    /* Um cinza muito claro e suave */
+}
+
+/* --- Seção do Banner (Hero) --- */
+.memorial-banner {
+    height: 40vh;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+}
+
+.memorial-header {
+    position: relative;
+    margin-top: -100px;
+    /* Puxa a seção do nome para cima */
+}
+
+.memorial-profile-pic {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 5px solid white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    object-fit: cover;
+}
+
+/* --- Conteúdo Principal --- */
+.memorial-main-content {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Abas de Mídia --- */
+.nav-tabs .nav-link {
+    color: #6c757d;
+}
+
+.nav-tabs .nav-link.active {
+    color: #000;
+    border-color: #dee2e6 #dee2e6 #fff;
+    font-weight: 500;
+}
+
+/* Ajustes no Gallery-Item */
+.gallery-item {
+    overflow: hidden;
+    border-radius: 0.5rem;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 200px;
+    /* Altura fixa para fotos */
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.gallery-item:hover img {
+    transform: scale(1.05);
+}
+
+.gallery-item video {
+    /* A altura é controlada pelo video-container */
+    width: 100%;
+    height: auto;
+}
+
+/* --- Player de Áudio --- */
+.audio-item {
+    border-bottom: 1px solid #eee;
+}
+
+.audio-item:last-child {
+    border-bottom: none;
+}
+
+.floating-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Container de Vídeo (Proporção) --- */
+.video-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    /* Proporção 16:9 */
+    height: 0;
+    overflow: hidden;
+    background-color: #000;
+    border-radius: 0.5rem;
+}
+
+.video-container video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* --- Wrappers de Rolagem (Estado Padrão Recolhido) --- */
+.bio-scroll-wrapper,
+.comments-scroll-wrapper,
+.media-scroll-wrapper {
+    /* Altura inicial "recolhida" */
+    max-height: 600px;
+    overflow-y: hidden;
+    padding-right: 10px;
+    padding-left: 5px;
+    /* Efeito de transição suave */
+    transition: max-height 0.5s ease-out;
+    /* Adiciona um leve "fade" no final do conteúdo */
+    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+}
+
+/* --- Estado Expandido --- */
+.bio-scroll-wrapper.is-expanded {
+    max-height: 800px;
+    /* Sua altura original */
+    overflow-y: auto;
+    -webkit-mask-image: none;
+    /* Remove o fade */
+    mask-image: none;
+}
+
+.comments-scroll-wrapper.is-expanded {
+    max-height: 800px;
+    /* Sua altura original */
+    overflow-y: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+.media-scroll-wrapper.is-expanded {
+    max-height: 800px;
+    /* Sua altura original */
+    overflow-y: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* --- Estilo do Botão "Mostrar Mais" --- */
+.btn-show-more {
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.btn-show-more .fa-chevron-down {
+    transition: transform 0.3s ease;
+}
+
+.btn-show-more.is-expanded .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.card-comentario {
+    /* Adiciona a transição suave para o efeito */
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    /* Define uma sombra padrão um pouco mais visível que a do Bootstrap */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-comentario:hover {
+    /* "Levanta" o card 5px ao passar o mouse */
+    transform: translateY(-5px);
+
+    /* Aumenta a sombra para dar a sensação de "flutuação" */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
