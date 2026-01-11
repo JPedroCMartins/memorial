@@ -27,4 +27,4 @@ Certifique-se de ter o Docker e Docker Compose instalados.
 docker compose up --build -d
 
 # 2. Acessar a aplicação
-# Abra http://localhost:8000
+# Abra http://localhost:8001
