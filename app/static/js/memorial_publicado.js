@@ -23,34 +23,39 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Verifica se o conteúdo é realmente maior que o wrapper (se está truncado)
-        // Se não estiver, esconde o botão.
-        setTimeout(() => {
+    });
+
+    function checkButtonVisibility() {
+        document.querySelectorAll('.btn-show-more').forEach(button => {
             const targetSelector = button.dataset.target;
             const contentWrapper = document.querySelector(targetSelector);
-            if (contentWrapper && contentWrapper.offsetParent !== null) {
-                if (contentWrapper.scrollHeight <= contentWrapper.clientHeight && !contentWrapper.classList.contains('is-expanded')) {
-                    button.style.display = 'none';
+            
+            if (contentWrapper && contentWrapper.offsetParent !== null) { // Apenas elementos visíveis
+                // Verifica se não está expandido para medir o overflow
+                if (!contentWrapper.classList.contains('is-expanded')) {
+                    if (contentWrapper.scrollHeight <= contentWrapper.clientHeight) {
+                        button.style.display = 'none';
+                        contentWrapper.style.maskImage = 'none';
+                        contentWrapper.style.webkitMaskImage = 'none';
+                    } else {
+                        button.style.display = 'block';
+                        contentWrapper.style.maskImage = '';
+                        contentWrapper.style.webkitMaskImage = '';
+                    }
                 }
             }
-        }, 500);
-    });
+        });
+    }
+
+    // Executa a verificação inicial (com um pequeno timeout para garantir o carregamento das imagens)
+    setTimeout(checkButtonVisibility, 500);
+
+    // Reavalia a visibilidade caso a janela mude de tamanho
+    window.addEventListener('resize', checkButtonVisibility);
 
     // Atualiza a visibilidade dos botões ao trocar de aba (fotos, vídeos, áudios)
     const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
     tabEls.forEach(tab => {
-        tab.addEventListener('shown.bs.tab', function () {
-            document.querySelectorAll('.btn-show-more').forEach(button => {
-                const targetSelector = button.dataset.target;
-                const contentWrapper = document.querySelector(targetSelector);
-                if (contentWrapper && contentWrapper.offsetParent !== null) { // Apenas elementos visíveis
-                    if (contentWrapper.scrollHeight <= contentWrapper.clientHeight && !contentWrapper.classList.contains('is-expanded')) {
-                        button.style.display = 'none';
-                    } else {
-                        button.style.display = 'block';
-                    }
-                }
-            });
-        });
+        tab.addEventListener('shown.bs.tab', checkButtonVisibility);
     });
 });
