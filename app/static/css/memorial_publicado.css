@@ -158,41 +158,27 @@ body {
 .bio-scroll-wrapper,
 .comments-scroll-wrapper,
 .media-scroll-wrapper {
-    /* Altura inicial "recolhida" */
-    max-height: 600px;
-    overflow-y: hidden;
+    /* Altura inicial "recolhida" ajustada */
+    max-height: 400px;
+    overflow: hidden;
     padding-right: 10px;
     padding-left: 5px;
     /* Efeito de transição suave */
-    transition: max-height 0.5s ease-out;
+    transition: max-height 0.8s ease-in-out;
     /* Adiciona um leve "fade" no final do conteúdo */
-    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
 }
 
 /* --- Estado Expandido --- */
-.bio-scroll-wrapper.is-expanded {
-    max-height: 800px;
-    /* Sua altura original */
-    overflow-y: auto;
+.bio-scroll-wrapper.is-expanded,
+.comments-scroll-wrapper.is-expanded,
+.media-scroll-wrapper.is-expanded {
+    /* Expande altura o suficiente para mostrar o conteúdo total sem barra de rolagem interna */
+    max-height: 10000px;
+    overflow: visible;
     -webkit-mask-image: none;
     /* Remove o fade */
-    mask-image: none;
-}
-
-.comments-scroll-wrapper.is-expanded {
-    max-height: 800px;
-    /* Sua altura original */
-    overflow-y: auto;
-    -webkit-mask-image: none;
-    mask-image: none;
-}
-
-.media-scroll-wrapper.is-expanded {
-    max-height: 800px;
-    /* Sua altura original */
-    overflow-y: auto;
-    -webkit-mask-image: none;
     mask-image: none;
 }
 

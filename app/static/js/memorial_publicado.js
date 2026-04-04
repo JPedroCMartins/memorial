@@ -23,16 +23,34 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Verifica se o conteúdo é realmente maior que o wrapper
-        // Se não for, esconde o botão
-        // Usamos um pequeno timeout para garantir que o conteúdo (imagens) tenha tempo de carregar
+        // Verifica se o conteúdo é realmente maior que o wrapper (se está truncado)
+        // Se não estiver, esconde o botão.
         setTimeout(() => {
             const targetSelector = button.dataset.target;
             const contentWrapper = document.querySelector(targetSelector);
-            if (contentWrapper && contentWrapper.scrollHeight <= 200) { // 200 é a altura recolhida
-                button.style.display = 'none';
+            if (contentWrapper && contentWrapper.offsetParent !== null) {
+                if (contentWrapper.scrollHeight <= contentWrapper.clientHeight && !contentWrapper.classList.contains('is-expanded')) {
+                    button.style.display = 'none';
+                }
             }
         }, 500);
+    });
 
+    // Atualiza a visibilidade dos botões ao trocar de aba (fotos, vídeos, áudios)
+    const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabEls.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function () {
+            document.querySelectorAll('.btn-show-more').forEach(button => {
+                const targetSelector = button.dataset.target;
+                const contentWrapper = document.querySelector(targetSelector);
+                if (contentWrapper && contentWrapper.offsetParent !== null) { // Apenas elementos visíveis
+                    if (contentWrapper.scrollHeight <= contentWrapper.clientHeight && !contentWrapper.classList.contains('is-expanded')) {
+                        button.style.display = 'none';
+                    } else {
+                        button.style.display = 'block';
+                    }
+                }
+            });
+        });
     });
 });
