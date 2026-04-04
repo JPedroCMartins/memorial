@@ -249,7 +249,7 @@ body {
 .bio-scroll-wrapper.is-expanded,
 .comments-scroll-wrapper.is-expanded,
 .media-scroll-wrapper.is-expanded {
-    max-height: 10000px;
+    max-height: none;
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;
