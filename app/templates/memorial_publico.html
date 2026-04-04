@@ -160,7 +160,7 @@
                 <section class="comments-section mt-5">
                     <h2 class="section-title">Livro de Condolências</h2>
 
-                    <div class="comments-scroll-wrapper" id="commentsWrapper">
+                    <div class="comments-scroll-area">
                         {% set ns = namespace(has_visible=false) %}
                         {% if memorial.comentarios %}
                             <div class="row g-4">
@@ -192,11 +192,6 @@
                             <p class="text-center text-muted py-4">Ainda não há mensagens aprovadas neste memorial.</p>
                         {% endif %}
                     </div>
-                    
-                    <button type="button" class="btn btn-link d-block mx-auto btn-show-more"
-                        data-target="#commentsWrapper">
-                        Mostrar mais <i class="fas fa-chevron-down ms-1"></i>
-                    </button>
                 </section>
             </main>
         </div>

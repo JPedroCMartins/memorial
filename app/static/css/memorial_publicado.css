@@ -275,7 +275,6 @@ body {
 
 /* --- Wrappers de Rolagem e Mostrar Mais --- */
 .bio-scroll-wrapper,
-.comments-scroll-wrapper,
 .media-scroll-wrapper {
     max-height: 400px;
     overflow: hidden;
@@ -286,12 +285,38 @@ body {
 }
 
 .bio-scroll-wrapper.is-expanded,
-.comments-scroll-wrapper.is-expanded,
 .media-scroll-wrapper.is-expanded {
     max-height: none;
     overflow: visible;
     -webkit-mask-image: none;
     mask-image: none;
+}
+
+/* --- Rolagem Fixa para Comentários --- */
+.comments-scroll-area {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 15px;
+}
+
+/* Scrollbar elegante para a área de comentários */
+.comments-scroll-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.comments-scroll-area::-webkit-scrollbar-track {
+    background: #f0ede6;
+    border-radius: 8px;
+}
+
+.comments-scroll-area::-webkit-scrollbar-thumb {
+    background-color: #c2a878;
+    border-radius: 8px;
+}
+
+.comments-scroll-area::-webkit-scrollbar-thumb:hover {
+    background-color: #ab9265;
 }
 
 .btn-show-more {
