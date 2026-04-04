@@ -1,191 +1,272 @@
 body {
-    background-color: #f4f6f8;
+    background-color: #f7f6f3; /* Cinza super claro, elegante e quente */
     font-family: 'Inter', sans-serif;
-    color: #333;
+    color: #4a4a4a;
+    -webkit-font-smoothing: antialiased;
 }
 
-.title-font {
-    font-family: 'Lora', serif;
-    color: #2c3e50;
-}
-
-.quote-font {
-    font-family: 'Lora', serif;
-    color: #5a6c7d;
-}
-
-.date-font {
-    letter-spacing: 1px;
-    font-size: 1.1rem;
-}
-
-/* --- Seção do Banner (Hero) --- */
-.memorial-banner {
-    height: 45vh;
+/* --- Hero Section --- */
+.hero-banner {
+    height: 60vh;
     background-size: cover;
     background-position: center;
+    background-attachment: fixed; /* Efeito parallax suave */
     position: relative;
-    border-bottom: 4px solid rgba(255, 255, 255, 0.2);
 }
 
-.memorial-banner::after {
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%);
+}
+
+/* --- Layout Principal --- */
+.main-container {
+    position: relative;
+    z-index: 10;
+    margin-top: -20vh;
+    padding-bottom: 4rem;
+}
+
+.content-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.06);
+    padding: 4rem;
+}
+
+@media (max-width: 768px) {
+    .content-card {
+        padding: 2rem 1.5rem;
+    }
+    .hero-banner {
+        background-attachment: scroll; /* Melhor performance em mobile */
+    }
+}
+
+/* --- Cabeçalho e Perfil --- */
+.profile-frame {
+    display: inline-block;
+    padding: 8px;
+    background: #fff;
+    border-radius: 50%;
+    margin-top: -120px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+}
+
+.profile-pic {
+    width: 170px;
+    height: 170px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.memorial-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    color: #2c2c2c;
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.memorial-dates {
+    font-size: 1rem;
+    letter-spacing: 2px;
+    color: #888;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.memorial-quote-wrapper {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.memorial-quote {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.4rem;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* --- Divisores e Títulos --- */
+.divider-elegant {
+    height: 1px;
+    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+    margin: 3.5rem 0;
+}
+
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: #2c2c2c;
+    text-align: center;
+    margin-bottom: 2.5rem;
+    font-weight: 400;
+}
+
+/* --- Biografia --- */
+.bio-text {
+    font-size: 1.15rem;
+    line-height: 1.8;
+    color: #555;
+    white-space: pre-wrap;
+    text-align: justify;
+}
+
+/* --- Abas Elegantes --- */
+.elegant-tabs {
+    border-bottom: 1px solid #eaeaea;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.elegant-tabs .nav-link {
+    border: none;
+    background: transparent;
+    color: #888;
+    font-size: 1.1rem;
+    padding: 1rem 0.5rem;
+    position: relative;
+    transition: color 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.elegant-tabs .nav-link:hover {
+    color: #4a4a4a;
+}
+
+.elegant-tabs .nav-link.active {
+    color: #2c2c2c;
+}
+
+.elegant-tabs .nav-link.active::after {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #c2a878; /* Tom dourado elegante */
 }
 
-.memorial-header {
-    position: relative;
-    margin-top: -110px;
-    z-index: 2;
-}
-
-.memorial-profile-pic {
-    width: 200px;
-    height: 200px;
-    border-radius: 50%;
-    border: 6px solid #fff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    object-fit: cover;
-    background-color: #fff;
-}
-
-/* --- Conteúdo Principal --- */
-.memorial-main-content {
-    background-color: #ffffff;
-    border-radius: 1rem;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
-    line-height: 1.8;
-}
-
-/* --- Abas de Mídia --- */
-.nav-tabs {
-    border-bottom: 2px solid #edf2f7;
-}
-
-.nav-tabs .nav-link {
-    color: #718096;
-    border: none;
-    border-bottom: 2px solid transparent;
-    padding: 0.75rem 1.5rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-}
-
-.nav-tabs .nav-link:hover {
-    color: #2d3748;
-    border-color: transparent;
-}
-
-.nav-tabs .nav-link.active {
-    color: #2b6cb0;
-    border: none;
-    border-bottom: 2px solid #2b6cb0;
-    background-color: transparent;
-    font-weight: 600;
-}
-
-/* Ajustes no Gallery-Item */
+/* --- Galeria e Mídia --- */
 .gallery-item {
     overflow: hidden;
-    border-radius: 0.5rem;
+    border-radius: 8px;
+    background: #000;
 }
 
 .gallery-item img {
     width: 100%;
-    height: 200px;
-    /* Altura fixa para fotos */
+    height: 250px;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: transform 0.5s ease, opacity 0.5s ease;
+    opacity: 0.95;
 }
 
 .gallery-item:hover img {
     transform: scale(1.05);
+    opacity: 1;
 }
 
-.gallery-item video {
-    /* A altura é controlada pelo video-container */
+.video-container {
+    position: relative;
     width: 100%;
-    height: auto;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    background-color: #000;
 }
 
-/* --- Player de Áudio --- */
+.video-container video {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+}
+
 .audio-item {
-    border-bottom: 1px solid #eee;
+    background: #fdfdfc;
+    border: 1px solid #f0ede6;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
 }
 
-.audio-item:last-child {
-    border-bottom: none;
-}
-
-.floating-btn {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
+.audio-icon-wrapper {
+    background: #c2a878;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* --- Container de Vídeo (Proporção) --- */
-.video-container {
-    position: relative;
-    width: 100%;
-    padding-bottom: 56.25%;
-    /* Proporção 16:9 */
-    height: 0;
-    overflow: hidden;
-    background-color: #000;
-    border-radius: 0.5rem;
+/* --- Comentários (Estilo Carta) --- */
+.card-comentario {
+    background-color: #fdfdfc;
+    border: 1px solid #f0ede6;
+    border-radius: 12px;
+    box-shadow: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.video-container video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+.card-comentario:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.04);
 }
 
-/* --- Wrappers de Rolagem (Estado Padrão Recolhido) --- */
+.card-comentario .card-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-style: italic;
+    color: #444;
+    line-height: 1.6;
+}
+
+.comment-author {
+    border-top: 1px solid #f0ede6;
+    padding-top: 1rem;
+}
+
+/* --- Wrappers de Rolagem e Mostrar Mais --- */
 .bio-scroll-wrapper,
 .comments-scroll-wrapper,
 .media-scroll-wrapper {
-    /* Altura inicial "recolhida" ajustada */
     max-height: 400px;
     overflow: hidden;
-    padding-right: 10px;
-    padding-left: 5px;
-    /* Efeito de transição suave */
+    padding-right: 5px;
     transition: max-height 0.8s ease-in-out;
-    /* Adiciona um leve "fade" no final do conteúdo */
-    -webkit-mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 75%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
 }
 
-/* --- Estado Expandido --- */
 .bio-scroll-wrapper.is-expanded,
 .comments-scroll-wrapper.is-expanded,
 .media-scroll-wrapper.is-expanded {
-    /* Expande altura o suficiente para mostrar o conteúdo total sem barra de rolagem interna */
     max-height: 10000px;
     overflow: visible;
     -webkit-mask-image: none;
-    /* Remove o fade */
     mask-image: none;
 }
 
-/* --- Estilo do Botão "Mostrar Mais" --- */
 .btn-show-more {
+    color: #c2a878;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 1rem;
     text-decoration: none;
-    font-weight: 500;
+}
+
+.btn-show-more:hover {
+    color: #a88d5c;
 }
 
 .btn-show-more .fa-chevron-down {
@@ -196,28 +277,58 @@ body {
     transform: rotate(180deg);
 }
 
-.card-comentario {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+/* --- Botões e Modais --- */
+.floating-btn {
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    background-color: #2c2c2c;
+    color: #c2a878;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, background-color 0.3s;
+}
+
+.floating-btn:hover {
+    background-color: #1a1a1a;
+    color: #e5c993;
+    transform: scale(1.05);
+}
+
+.tracking-wide {
+    letter-spacing: 1px;
+}
+
+.elegant-modal {
+    border-radius: 16px;
+}
+
+.elegant-input {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    background-color: #fafafa;
+}
+
+.elegant-input:focus {
+    background-color: #fff;
+    border-color: #c2a878;
+    box-shadow: 0 0 0 0.25rem rgba(194, 168, 120, 0.2);
+}
+
+.btn-elegant {
+    background-color: #c2a878;
+    color: #fff;
     border: none;
-    border-left: 4px solid #cbd5e1;
-    border-radius: 0.5rem;
-    background-color: #f8fafc;
-    margin-bottom: 1.5rem !important;
+    transition: background-color 0.3s;
 }
 
-.card-comentario .card-body {
-    padding: 1.5rem;
-}
-
-.card-comentario .card-text {
-    font-size: 1.05rem;
-    color: #475569;
-    font-style: italic;
-}
-
-.card-comentario:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    border-left-color: #94a3b8;
+.btn-elegant:hover {
+    background-color: #ab9265;
+    color: #fff;
 }
