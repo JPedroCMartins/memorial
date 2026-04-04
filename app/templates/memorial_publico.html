@@ -16,6 +16,14 @@
 
 <body>
 
+    <!-- Tela de Carregamento -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content text-center">
+            <div class="loading-spinner mb-3"></div>
+            <h2 class="loading-text">Em memória de<br>{{ memorial.nome }}</h2>
+        </div>
+    </div>
+
     <header>
         <div class="hero-banner"
             style="background-image: url('{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.banner_filename) }}');">

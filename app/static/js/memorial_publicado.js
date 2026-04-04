@@ -1,3 +1,13 @@
+window.addEventListener('load', function() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        // Um pequeno atraso para garantir que a animação inicial do texto seja vista
+        setTimeout(() => {
+            loadingScreen.classList.add('fade-out');
+        }, 800); 
+    }
+});
+
 document.addEventListener('DOMContentLoaded', function () {
     // Procura por todos os botões "Mostrar mais"
     document.querySelectorAll('.btn-show-more').forEach(button => {
