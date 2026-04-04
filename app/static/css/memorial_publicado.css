@@ -1,47 +1,89 @@
 body {
-    background-color: #f0f2f5;
-    /* Um cinza muito claro e suave */
+    background-color: #f4f6f8;
+    font-family: 'Inter', sans-serif;
+    color: #333;
+}
+
+.title-font {
+    font-family: 'Lora', serif;
+    color: #2c3e50;
+}
+
+.quote-font {
+    font-family: 'Lora', serif;
+    color: #5a6c7d;
+}
+
+.date-font {
+    letter-spacing: 1px;
+    font-size: 1.1rem;
 }
 
 /* --- Seção do Banner (Hero) --- */
 .memorial-banner {
-    height: 40vh;
+    height: 45vh;
     background-size: cover;
     background-position: center;
     position: relative;
+    border-bottom: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+.memorial-banner::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.4) 100%);
 }
 
 .memorial-header {
     position: relative;
-    margin-top: -100px;
-    /* Puxa a seção do nome para cima */
+    margin-top: -110px;
+    z-index: 2;
 }
 
 .memorial-profile-pic {
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    border: 5px solid white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 6px solid #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
     object-fit: cover;
+    background-color: #fff;
 }
 
 /* --- Conteúdo Principal --- */
 .memorial-main-content {
-    background-color: white;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    line-height: 1.8;
 }
 
 /* --- Abas de Mídia --- */
+.nav-tabs {
+    border-bottom: 2px solid #edf2f7;
+}
+
 .nav-tabs .nav-link {
-    color: #6c757d;
+    color: #718096;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #2d3748;
+    border-color: transparent;
 }
 
 .nav-tabs .nav-link.active {
-    color: #000;
-    border-color: #dee2e6 #dee2e6 #fff;
-    font-weight: 500;
+    color: #2b6cb0;
+    border: none;
+    border-bottom: 2px solid #2b6cb0;
+    background-color: transparent;
+    font-weight: 600;
 }
 
 /* Ajustes no Gallery-Item */
@@ -169,17 +211,27 @@ body {
 }
 
 .card-comentario {
-    /* Adiciona a transição suave para o efeito */
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    border: none;
+    border-left: 4px solid #cbd5e1;
+    border-radius: 0.5rem;
+    background-color: #f8fafc;
+    margin-bottom: 1.5rem !important;
+}
 
-    /* Define uma sombra padrão um pouco mais visível que a do Bootstrap */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.card-comentario .card-body {
+    padding: 1.5rem;
+}
+
+.card-comentario .card-text {
+    font-size: 1.05rem;
+    color: #475569;
+    font-style: italic;
 }
 
 .card-comentario:hover {
-    /* "Levanta" o card 5px ao passar o mouse */
-    transform: translateY(-5px);
-
-    /* Aumenta a sombra para dar a sensação de "flutuação" */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-left-color: #94a3b8;
 }
