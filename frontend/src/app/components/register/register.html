@@ -1,0 +1,119 @@
+<!-- Container principal -->
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300 font-sans p-4">
+  
+  <!-- O cartão de registro -->
+  <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md">
+    
+    <!-- Cabeçalho -->
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-gray-800">Criar uma conta</h2>
+      <p class="text-gray-500 mt-2 text-sm">Preencha os dados abaixo para se cadastrar.</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      
+      <!-- Campo Nome -->
+      <div class="flex flex-col mb-5">
+        <label for="name" class="mb-2 font-semibold text-gray-700 text-sm">Nome completo</label>
+        <input 
+          type="text" 
+          id="name" 
+          formControlName="name" 
+          placeholder="João da Silva"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': registerForm.get('name')?.invalid && registerForm.get('name')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !(registerForm.get('name')?.invalid && registerForm.get('name')?.touched)
+          }">
+        
+        @if (registerForm.get('name')?.invalid && registerForm.get('name')?.touched) {
+          <span class="text-red-500 text-xs mt-2 font-medium">
+            O nome deve ter pelo menos 3 caracteres.
+          </span>
+        }
+      </div>
+
+      <!-- Campo E-mail -->
+      <div class="flex flex-col mb-5">
+        <label for="email" class="mb-2 font-semibold text-gray-700 text-sm">E-mail</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          placeholder="seu@email.com"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': registerForm.get('email')?.invalid && registerForm.get('email')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !(registerForm.get('email')?.invalid && registerForm.get('email')?.touched)
+          }">
+        
+        @if (registerForm.get('email')?.invalid && registerForm.get('email')?.touched) {
+          <span class="text-red-500 text-xs mt-2 font-medium">
+            Por favor, insira um e-mail válido.
+          </span>
+        }
+      </div>
+
+      <!-- Campo Senha -->
+      <div class="flex flex-col mb-5">
+        <label for="password" class="mb-2 font-semibold text-gray-700 text-sm">Senha</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          placeholder="••••••••"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': registerForm.get('password')?.invalid && registerForm.get('password')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !(registerForm.get('password')?.invalid && registerForm.get('password')?.touched)
+          }">
+        
+        @if (registerForm.get('password')?.invalid && registerForm.get('password')?.touched) {
+          <span class="text-red-500 text-xs mt-2 font-medium">
+            A senha deve ter pelo menos 6 caracteres.
+          </span>
+        }
+      </div>
+
+      <!-- Campo Confirmar Senha -->
+      <div class="flex flex-col mb-6">
+        <label for="confirmPassword" class="mb-2 font-semibold text-gray-700 text-sm">Confirmar Senha</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          formControlName="confirmPassword" 
+          placeholder="••••••••"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': (registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch')) && registerForm.get('confirmPassword')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !((registerForm.get('confirmPassword')?.invalid || registerForm.hasError('mismatch')) && registerForm.get('confirmPassword')?.touched)
+          }">
+        
+        @if (registerForm.hasError('mismatch') && registerForm.get('confirmPassword')?.touched) {
+          <span class="text-red-500 text-xs mt-2 font-medium">
+            As senhas não coincidem.
+          </span>
+        } @else if (registerForm.get('confirmPassword')?.hasError('required') && registerForm.get('confirmPassword')?.touched) {
+          <span class="text-red-500 text-xs mt-2 font-medium">
+            A confirmação de senha é obrigatória.
+          </span>
+        }
+      </div>
+
+      <!-- Botão de Submit -->
+      <button 
+        type="submit" 
+        [disabled]="registerForm.invalid"
+        class="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 active:scale-95 transition-all disabled:bg-blue-300 disabled:cursor-not-allowed">
+        Cadastrar
+      </button>
+      
+    </form>
+
+    <!-- Link para voltar ao Login -->
+    <div class="text-center mt-6 text-sm">
+      <span class="text-gray-500">Já tem uma conta?</span>
+      <a href="#" class="text-blue-600 font-medium hover:underline ml-1">Entrar</a>
+    </div>
+  </div>
+</div>

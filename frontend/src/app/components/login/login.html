@@ -1,0 +1,66 @@
+<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-300 font-sans p-4">
+  
+  <div class="bg-white p-8 sm:p-10 rounded-2xl shadow-xl w-full max-w-md">
+    
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-gray-800">Bem-vindo de volta!</h2>
+      <p class="text-gray-500 mt-2 text-sm">Faça login para acessar sua conta.</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      
+      <div class="flex flex-col mb-5">
+        <label for="email" class="mb-2 font-semibold text-gray-700 text-sm">E-mail</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email" 
+          placeholder="seu@email.com"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': loginForm.get('email')?.invalid && loginForm.get('email')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !(loginForm.get('email')?.invalid && loginForm.get('email')?.touched)
+          }">
+        
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <span class="text-red-500 text-xs mt-2 font-medium">
+                A senha deve ter pelo menos 6 caracteres.
+            </span>
+        }
+      </div>
+
+      <div class="flex flex-col mb-6">
+        <label for="password" class="mb-2 font-semibold text-gray-700 text-sm">Senha</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password" 
+          placeholder="••••••••"
+          class="px-4 py-3 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 transition-shadow"
+          [ngClass]="{
+            'border-red-500 focus:ring-red-200': loginForm.get('password')?.invalid && loginForm.get('password')?.touched,
+            'border-gray-300 focus:border-blue-500 focus:ring-blue-200': !(loginForm.get('password')?.invalid && loginForm.get('password')?.touched)
+          }">
+        
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <span class="text-red-500 text-xs mt-2 font-medium">
+                A senha deve ter pelo menos 6 caracteres.
+            </span>
+        }
+      </div>
+
+      <button 
+        type="submit" 
+        [disabled]="loginForm.invalid"
+        class="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 active:scale-95 transition-all disabled:bg-blue-300 disabled:cursor-not-allowed">
+        Entrar
+      </button>
+      
+    </form>
+
+    <div class="flex justify-between mt-6 text-sm">
+      <a href="#" class="text-blue-600 font-medium hover:underline">Esqueceu a senha?</a>
+      <a href="#" class="text-blue-600 font-medium hover:underline">Criar uma conta</a>
+    </div>
+  </div>
+</div>
