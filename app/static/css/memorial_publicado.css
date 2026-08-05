@@ -152,6 +152,17 @@ body {
     object-fit: cover;
 }
 
+.profile-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f5f0e8, #e7dccb);
+    color: #8a7050;
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    border: 2px solid rgba(120, 90, 40, 0.15);
+}
+
 .memorial-name {
     font-family: 'Playfair Display', serif;
     font-size: 3.5rem;

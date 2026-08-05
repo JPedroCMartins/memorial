@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 
 import { Login } from './login';
 
@@ -9,6 +10,7 @@ describe('Login', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Login],
+      providers: [provideRouter([])]
     }).compileComponents();
 
     fixture = TestBed.createComponent(Login);
@@ -18,5 +20,11 @@ describe('Login', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('alterna a visibilidade da senha', () => {
+    expect(component.showPassword).toBe(false);
+    component.togglePassword();
+    expect(component.showPassword).toBe(true);
   });
 });

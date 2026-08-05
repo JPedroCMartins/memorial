@@ -1,15 +1,18 @@
 import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, RouterModule],
   templateUrl: './register.html'
 })
 export class Register {
   registerForm: FormGroup;
+  showPassword = false;
+  showConfirmPassword = false;
 
   constructor(private fb: FormBuilder) {
     this.registerForm = this.fb.group({
@@ -25,6 +28,14 @@ export class Register {
     const confirmPassword = control.get('confirmPassword')?.value;
     
     return password === confirmPassword ? null : { mismatch: true };
+  }
+
+  toggleField(field: 'password' | 'confirmPassword') {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+    } else {
+      this.showConfirmPassword = !this.showConfirmPassword;
+    }
   }
 
   onSubmit() {

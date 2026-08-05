@@ -26,7 +26,7 @@
       </h2>
 
       <div class="flex items-center gap-3 w-full sm:w-auto">
-        <button class="flex-1 sm:flex-none text-center px-4 py-2.5 bg-red-50 text-red-600 rounded-lg font-semibold hover:bg-red-100 active:scale-95 transition-all">
+        <button (click)="sair()" class="flex-1 sm:flex-none text-center px-4 py-2.5 bg-red-50 text-red-600 rounded-lg font-semibold hover:bg-red-100 active:scale-95 transition-all">
           Sair
         </button>
         <button (click)="toggleNovoMemorialModal()" class="flex-1 sm:flex-none px-5 py-2.5 bg-blue-600 text-white rounded-lg font-bold shadow-md shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all">
@@ -61,10 +61,10 @@
             @if (activeDropdownId === memorial.id) {
               <div class="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 z-10 overflow-hidden">
                 <button (click)="abrirModalEdicao(memorial)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600">Editar</button>
-                <a href="/m/{{ memorial.url_personalizada }}" target="_blank" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600">Visualizar</a>
+                <a routerLink="/memorial" class="block px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600">Visualizar</a>
                 <button (click)="abrirModalComentarios(memorial)" class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600">Comentários</button>
                 <div class="border-t border-slate-100 my-1"></div>
-                <button (click)="apagarMemorial(memorial.id)" class="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50">Apagar</button>
+                <button (click)="solicitarExclusao(memorial)" class="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50">Apagar</button>
               </div>
             }
           </div>
@@ -91,11 +91,11 @@
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="toggleNovoMemorialModal()"></div>
     
     <div class="flex min-h-full items-center justify-center p-4 relative">
-      <div class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label="Criar novo memorial" class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         
         <div class="bg-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
           <h3 class="text-xl font-bold text-slate-800">Criar Novo Memorial</h3>
-          <button (click)="toggleNovoMemorialModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold transition-colors">✕</button>
+          <button (click)="fecharNovoMemorialModal()" aria-label="Fechar janela" class="text-slate-400 hover:text-slate-600 text-xl font-bold transition-colors">✕</button>
         </div>
         
         <form [formGroup]="novoMemorialForm" (ngSubmit)="onSubmitNovoMemorial()">
@@ -171,7 +171,7 @@
           </div>
           
           <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t border-slate-100">
-            <button type="button" (click)="toggleNovoMemorialModal()" class="px-5 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors">Cancelar</button>
+            <button type="button" (click)="fecharNovoMemorialModal()" class="px-5 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors">Cancelar</button>
             <button type="submit" [disabled]="novoMemorialForm.invalid" class="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 shadow-md shadow-blue-200 transition-all disabled:bg-blue-300 disabled:cursor-not-allowed">Salvar Memorial</button>
           </div>
         </form>
@@ -186,7 +186,7 @@
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="fecharModalEdicao()"></div>
     
     <div class="flex min-h-full items-center justify-center p-4 relative">
-      <div class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label="Editar memorial" class="w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         
         <div class="bg-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
           <h3 class="text-xl font-bold text-slate-800">
@@ -306,7 +306,7 @@
     <div class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm" (click)="fecharModalComentarios()"></div>
     
     <div class="flex min-h-full items-center justify-center p-4 relative">
-      <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+      <div role="dialog" aria-modal="true" aria-label="Comentários do memorial" class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
         
         <div class="bg-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
           <h3 class="text-xl font-bold text-slate-800">Comentários de "{{ memorialSelecionadoParaComentarios.nome }}"</h3>
@@ -344,6 +344,39 @@
         </div>
         <div class="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-100">
           <button (click)="fecharModalComentarios()" class="px-5 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors">Fechar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Toast de feedback -->
+@if (toast) {
+  <div role="status" aria-live="polite"
+    class="fixed top-6 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-3 px-5 py-3 rounded-full shadow-xl text-sm font-medium text-white"
+    [ngClass]="toast.tipo === 'sucesso' ? 'bg-slate-800' : 'bg-red-600'">
+    <span>{{ toast.tipo === 'sucesso' ? '✓' : '✕' }}</span>
+    <span>{{ toast.mensagem }}</span>
+    <button (click)="fecharToast()" [attr.aria-label]="'Fechar aviso'" class="ml-2 font-bold hover:opacity-70">✕</button>
+  </div>
+}
+
+<!-- Diálogo de confirmação de exclusão -->
+@if (memorialSendoExcluido) {
+  <div class="fixed inset-0 z-50 overflow-y-auto">
+    <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" (click)="fecharConfirmarExclusao()"></div>
+    <div class="flex min-h-full items-center justify-center p-4 relative">
+      <div role="alertdialog" aria-modal="true" aria-labelledby="titulo-exclusao" class="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="p-6 text-center">
+          <div class="mx-auto h-14 w-14 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-2xl mb-4">🗑️</div>
+          <h3 id="titulo-exclusao" class="text-xl font-bold text-slate-800">Apagar este memorial?</h3>
+          <p class="text-slate-500 mt-2 text-sm leading-relaxed">
+            O memorial de <strong class="text-slate-700">{{ memorialSendoExcluido.nome }}</strong> e todas as suas mídias serão removidos permanentemente. Esta ação não pode ser desfeita.
+          </p>
+        </div>
+        <div class="bg-slate-50 px-6 py-4 flex justify-end gap-3 rounded-b-2xl border-t border-slate-100">
+          <button (click)="fecharConfirmarExclusao()" class="px-5 py-2.5 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300 transition-colors">Cancelar</button>
+          <button (click)="confirmarExclusao()" class="px-5 py-2.5 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 shadow-md shadow-red-200 transition-all">Apagar permanentemente</button>
         </div>
       </div>
     </div>

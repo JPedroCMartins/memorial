@@ -6,8 +6,17 @@ import { Memorial } from './components/memorial/memorial';
 
 export const routes: Routes = [
     {
+        path: '',
+        pathMatch: 'full',
+        redirectTo: 'login'
+    },
+    {
         path: 'login',
         component: Login
+    },
+    {
+        path: '**',
+        redirectTo: 'login'
     },
     {
         path: 'registrar',

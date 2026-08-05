@@ -26,7 +26,9 @@
 
     <header>
         <div class="hero-banner"
-            style="background-image: url('{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.banner_filename) }}');">
+            {% if memorial.banner_filename %}
+            style="background-image: url('{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.banner_filename) }}');"
+            {% endif %}>
             <div class="hero-overlay"></div>
         </div>
     </header>
@@ -36,8 +38,12 @@
             
             <div class="memorial-header text-center">
                 <div class="profile-frame">
+                    {% if memorial.logo_filename %}
                     <img src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.logo_filename) }}"
                         alt="Foto de {{ memorial.nome }}" class="profile-pic">
+                    {% else %}
+                    <div class="profile-pic profile-placeholder">{{ memorial.nome[0] }}</div>
+                    {% endif %}
                 </div>
                 <h1 class="memorial-name">{{ memorial.nome }}</h1>
                 <p class="memorial-dates">{{ memorial.nascimento | formatadata }} <span class="mx-2">&sim;</span> {{ memorial.falecimento | formatadata }}</p>
