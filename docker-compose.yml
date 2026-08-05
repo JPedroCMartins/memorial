@@ -1,14 +1,15 @@
-version: '3.8'
-
 services:
   web:
     build:
       context: .
     container_name: projeto-web-5001
     ports:
-      - "8001:5001"
+      - "${PORT:-8001}:5001"
     environment:
+      - SECRET_KEY=${SECRET_KEY:-dev}
       - ADMIN_EMAILS=${ADMIN_EMAILS:-}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:////app/instance/memorial.db}
+      - UPLOAD_FOLDER=${UPLOAD_FOLDER:-/app/instance/uploads}
     volumes:
       - ./instance:/app/instance
     restart: unless-stopped

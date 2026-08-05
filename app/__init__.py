@@ -5,7 +5,11 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 import os
+from dotenv import load_dotenv
 from .utils import formatar_data
+
+# Carrega as variáveis do arquivo .env (se existir)
+load_dotenv()
 
 # Crie as instâncias fora da função
 db = SQLAlchemy()
@@ -19,8 +23,10 @@ login_manager = LoginManager()
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY='dev',
-        SQLALCHEMY_DATABASE_URI='sqlite:///' + os.path.join(app.instance_path, 'memorial.db'),
+        SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
+        SQLALCHEMY_DATABASE_URI=os.environ.get('DATABASE_URL') or
+        ('sqlite:///' + os.path.join(app.instance_path, 'memorial.db')),
+
         SQLALCHEMY_TRACK_MODIFICATIONS=False
     )
     app.jinja_env.filters['formatadata'] = formatar_data
@@ -33,7 +39,9 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = 'memorial.login' # MOVA para cá e especifique o blueprint se necessário
-    app.config['UPLOAD_FOLDER'] = os.path.join(app.instance_path, 'uploads')    # Lembre-se de adicionar o user_loader aqui também
+    app.config['UPLOAD_FOLDER'] = (
+        os.environ.get('UPLOAD_FOLDER') or os.path.join(app.instance_path, 'uploads')
+    )
     app.config['ADMIN_EMAILS'] = [
         e.strip() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()
     ]

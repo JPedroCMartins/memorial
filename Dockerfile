@@ -12,6 +12,9 @@ RUN uv sync --frozen --no-cache
 
 COPY . .
 
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 EXPOSE 5001
 
-CMD ["uv", "run", "gunicorn", "--workers", "3", "--bind", "0.0.0.0:5001", "main:app"]
+ENTRYPOINT ["/entrypoint.sh"]

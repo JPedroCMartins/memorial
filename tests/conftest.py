@@ -11,22 +11,23 @@ from app.models import User
 
 
 @pytest.fixture()
-def app(tmp_path):
+def app(tmp_path, monkeypatch):
     """App Flask com banco de dados SQLite temporário isolado."""
+    # Injeta a URI de teste ANTES de criar o app, garantindo que o
+    # create_app() nunca toque no banco real (instance/memorial.db).
+    db_path = os.path.join(str(tmp_path), 'test.db')
+    monkeypatch.setenv('DATABASE_URL', f'sqlite:///{db_path}')
+    monkeypatch.setenv('UPLOAD_FOLDER', os.path.join(str(tmp_path), 'uploads'))
+
     test_app = create_app()
     test_app.config['TESTING'] = True
     test_app.config['WTF_CSRF_ENABLED'] = False
-    test_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(
-        tmp_path / 'test.db'
-    )
     test_app.config['ADMIN_EMAILS'] = ['admin@teste.com']
 
     with test_app.app_context():
-        db.drop_all()
         db.create_all()
         yield test_app
         db.session.remove()
-        db.drop_all()
 
 
 @pytest.fixture()
