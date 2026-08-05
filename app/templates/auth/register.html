@@ -1,89 +1,117 @@
 <!DOCTYPE html>
-<html lang="pt-br" data-bs-theme="dark">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Registro - J. Pedro C. Martins</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" rel="stylesheet">
+    <title>Criar conta — Memorial</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo_martins.png') }}">
-    <link href="" rel="stylesheet">
-
-    <style>
-        html, body {
-            height: 100%;
-        }
-        body {
-            display: flex;
-            align-items: center; /* Alinha verticalmente */
-            justify-content: center; /* Alinha horizontalmente */
-        }
-        .register-card {
-            width: 100%;
-            max-width: 450px; /* Largura máxima para o card */
-            padding: 2rem;
-            border-radius: 1rem;
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/user.css') }}" rel="stylesheet">
 </head>
-<body>
+<body class="auth-page">
+
+    <main class="auth-card">
+        <div class="auth-brand">
+            <div class="brand-logo">
+                <img src="{{ url_for('static', filename='images/logo_martins.png') }}" alt="Memorial"
+                    style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                <span style="display:none;">M</span>
+            </div>
+            <h1>Criar uma conta</h1>
+            <p>Comece a preservar as memórias de quem você ama.</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-3">
+            {% for category, message in messages %}
+            <div class="toast {{ 'error' if category == 'danger' else 'success' }}" style="position:static;animation:none;box-shadow:none;">
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST" id="registerForm" novalidate>
+            <div class="field">
+                <label for="name">Nome completo</label>
+                <input type="text" class="input-user" id="name" name="name" placeholder="João da Silva"
+                    autocomplete="name" required minlength="3">
+            </div>
+
+            <div class="field">
+                <label for="email">E-mail</label>
+                <input type="email" class="input-user" id="email" name="email" placeholder="seu@email.com"
+                    autocomplete="email" required>
+            </div>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="password">Senha</label>
+                    <div class="password-wrap">
+                        <input type="password" class="input-user" id="password" name="password"
+                            placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha"
+                            onclick="togglePassword(this, '#password')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="confirm-password">Confirmar senha</label>
+                    <div class="password-wrap">
+                        <input type="password" class="input-user" id="confirm-password" name="confirm-password"
+                            placeholder="Repita a senha" autocomplete="new-password" required minlength="6">
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha"
+                            onclick="togglePassword(this, '#confirm-password')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-user btn-gold btn-block mt-3">
+                Criar conta <i class="fas fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <p class="auth-switch">
+            Já tem uma conta? <a href="{{ url_for('memorial.login') }}">Entre</a>
+        </p>
+
+        <p class="auth-switch" style="margin-top:0.6rem;">
+            <a href="{{ url_for('memorial.landing') }}" style="font-weight:500;"><i class="fas fa-arrow-left"></i> Voltar ao início</a>
+        </p>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/user.js') }}"></script>
     <script>
-        // Inicializa a biblioteca de animações
-        AOS.init();
+        function togglePassword(btn, selector) {
+            const input = document.querySelector(selector);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+            btn.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+        }
 
-        document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("registerForm").addEventListener("submit", function(event) {
-                let password = document.getElementById("password").value;
-                let confirmPassword = document.getElementById("confirm-password").value;
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('registerForm');
+            const password = document.getElementById('password');
+            const confirm = document.getElementById('confirm-password');
 
-                if (password !== confirmPassword) {
-                    alert("As senhas não coincidem! Por favor, tente novamente.");
-                    event.preventDefault(); // Impede o envio do formulário
+            form.addEventListener('submit', function (event) {
+                if (password.value !== confirm.value) {
+                    event.preventDefault();
+                    showToast('As senhas não coincidem. Tente novamente.', 'erro');
+                    confirm.focus();
                 }
             });
         });
     </script>
-    
-    <div class="card shadow-lg register-card" data-aos="fade-up">
-        <div class="card-body">
-            <h2 class="card-title text-center mb-4">Registro</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-              {% if messages %}
-                <div class="mb-3">
-                {% for category, message in messages %}
-                  <div class="alert alert-{{ 'danger' if category == 'danger' else 'info' }}">{{ message }}</div>
-                {% endfor %}
-                </div>
-              {% endif %}
-            {% endwith %}
-            <form method="POST" id="registerForm">
-                <div class="mb-3">
-                    <label for="name" class="form-label">Nome</label>
-                    <input type="text" class="form-control" id="name" name="name" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">E-mail</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Senha</label>
-                    <input type="password" class="form-control" id="password" name="password" required>
-                </div>
-                <div class="mb-3">
-                    <label for="confirm-password" class="form-label">Confirmar Senha</label>
-                    <input type="password" class="form-control" id="confirm-password" name="confirm-password" required>
-                </div>
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-primary">Registrar</button>
-                </div>
-            </form>
-            <div class="text-center mt-3">
-                <a href="/login">Já tem uma conta? Faça login</a>
-            </div>
-        </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
