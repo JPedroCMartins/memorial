@@ -3,6 +3,19 @@ from app.models import User, Memorial, Comentario
 
 
 # --------------------------------------------------------------------------
+# Landing page
+# --------------------------------------------------------------------------
+
+class TestLanding:
+    def test_landing_renderiza(self, client):
+        resp = client.get('/')
+        assert resp.status_code == 200
+        assert b'Memorial' in resp.data
+        assert b'Entrar' in resp.data
+        assert b'Criar conta' in resp.data
+
+
+# --------------------------------------------------------------------------
 # Autenticação
 # --------------------------------------------------------------------------
 

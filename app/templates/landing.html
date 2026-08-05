@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial — Preserve a memória de quem você ama</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fontes elegantes: Playfair Display para títulos e Inter para textos corridos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/memorial_publicado.css') }}" rel="stylesheet">
+    <style>
+        .hero-banner {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%),
+                        radial-gradient(ellipse at top left, rgba(194,168,120,0.55), transparent 60%),
+                        radial-gradient(ellipse at bottom right, rgba(44,44,44,0.75), transparent 55%),
+                        linear-gradient(160deg, #2c2c2c 0%, #4a3c26 40%, #c2a878 100%);
+        }
+
+        .hero-banner .hero-overlay {
+            background: none;
+        }
+
+        .landing-logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+            margin-bottom: 1.5rem;
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            color: #c2a878;
+        }
+
+        .landing-tagline {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 1.4rem;
+            color: #666;
+            line-height: 1.6;
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background-color: #fdfdfc;
+            border: 1px solid #f0ede6;
+            border-radius: 12px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f5f0e8;
+            color: #c2a878;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin: 0 auto 1rem;
+        }
+
+        .feature-card h5 {
+            font-family: 'Playfair Display', serif;
+            color: #2c2c2c;
+        }
+
+        .feature-card p {
+            color: #777;
+            font-size: 0.95rem;
+        }
+
+        .steps-number {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #c2a878;
+            color: #fff;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.8rem;
+        }
+
+        .btn-hero {
+            background-color: #c2a878;
+            color: #fff;
+            border: none;
+            padding: 0.9rem 2.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .btn-hero:hover {
+            background-color: #ab9265;
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline-elegant {
+            border: 2px solid #c2a878;
+            color: #c2a878;
+            padding: 0.85rem 2.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: transparent;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .btn-outline-elegant:hover {
+            background-color: #c2a878;
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .landing-logo {
+                width: 90px;
+                height: 90px;
+                font-size: 2.2rem;
+            }
+            .landing-tagline {
+                font-size: 1.15rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Tela de Carregamento -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content text-center">
+            <div class="loading-spinner mb-3"></div>
+            <h2 class="loading-text">Memorial</h2>
+        </div>
+    </div>
+
+    <header>
+        <div class="hero-banner">
+            <div class="hero-overlay"></div>
+        </div>
+    </header>
+
+    <div class="container main-container">
+        <div class="content-card">
+
+            <div class="memorial-header text-center">
+                <div class="landing-logo">M</div>
+                <h1 class="memorial-name">Memorial</h1>
+                <p class="memorial-dates">Homenagens e recordações</p>
+
+                <div class="memorial-quote-wrapper mt-4">
+                    <p class="memorial-quote">"Preserve a memória, celebre a vida, eternize o amor."</p>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mt-5">
+                    <a href="{{ url_for('memorial.login') }}" class="btn btn-hero">
+                        <i class="fas fa-sign-in-alt me-2"></i>Entrar
+                    </a>
+                    <a href="{{ url_for('memorial.register') }}" class="btn btn-outline-elegant">
+                        Criar conta <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="divider-elegant"></div>
+
+            <main>
+                <section class="mb-5">
+                    <h2 class="section-title">Por que criar um Memorial?</h2>
+                    <p class="bio-text text-center">
+                        Um espaço digital dedicado a eternizar a trajetória de quem partiu.
+                        Reúna fotos, vídeos, áudios e histórias em um único lugar,
+                        e receba homenagens de amigos e familiares — com a tranquilidade de
+                        que cada mensagem passa pela sua aprovação antes de ser publicada.
+                    </p>
+                </section>
+
+                <section class="mb-5">
+                    <h2 class="section-title">Recursos</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <div class="feature-icon"><i class="fas fa-camera-retro"></i></div>
+                                <h5>Galeria de Mídias</h5>
+                                <p>Fotos, vídeos e áudios organizados em uma bela galeria para relembrar momentos especiais.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <div class="feature-icon"><i class="fas fa-book-open"></i></div>
+                                <h5>Livro de Condolências</h5>
+                                <p>Amigos e familiares deixam mensagens de carinho, que você modera antes de publicar.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 text-center">
+                                <div class="feature-icon"><i class="fas fa-link"></i></div>
+                                <h5>Link Personalizado</h5>
+                                <p>Cada memorial possui um endereço único e elegante, fácil de compartilhar.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="divider-elegant mt-5"></div>
+
+                <section class="mb-5">
+                    <h2 class="section-title">Como funciona</h2>
+                    <div class="row g-4">
+                        <div class="col-md-4 text-center">
+                            <div class="steps-number">1</div>
+                            <h5 class="fw-semibold text-muted text-uppercase" style="letter-spacing:1px;font-size:0.9rem;">Crie sua conta</h5>
+                            <p class="text-muted small mt-2">Registre-se gratuitamente para começar.</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="steps-number">2</div>
+                            <h5 class="fw-semibold text-muted text-uppercase" style="letter-spacing:1px;font-size:0.9rem;">Monte o memorial</h5>
+                            <p class="text-muted small mt-2">Adicione a biografia, fotos, vídeos e áudios.</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <div class="steps-number">3</div>
+                            <h5 class="fw-semibold text-muted text-uppercase" style="letter-spacing:1px;font-size:0.9rem;">Compartilhe</h5>
+                            <p class="text-muted small mt-2">Envie o link e receba homenagens.</p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-5">
+                        <a href="{{ url_for('memorial.register') }}" class="btn btn-hero">
+                            Começar agora <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <footer class="text-center py-5 text-muted small">
+        <p>&copy; 2026 J. Pedro C. Martins. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/memorial_publicado.js') }}"></script>
+</body>
+
+</html>

@@ -13,6 +13,11 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'mp3', 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+#--- landing route ---
+@bp.route('/')
+def landing():
+    return render_template('landing.html')
+
 #--- index route ---
 @bp.route('/m')
 @login_required
