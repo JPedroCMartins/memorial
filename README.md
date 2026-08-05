@@ -34,9 +34,11 @@ O projeto é um único app Flask com renderização server-side (Jinja2):
 │   ├── utils.py           # Helpers (formatação de datas)
 │   ├── templates/         # Templates Jinja2 (landing, home, auth, editar, memorial)
 │   └── static/            # CSS, JS e imagens
+├── migrations/            # Migrações Alembic (versions/ + env.py)
 ├── tests/                 # Testes pytest do backend
 ├── instance/              # Banco SQLite e uploads (gerado em runtime)
 ├── main.py                # Ponto de entrada do Flask
+├── alembic.ini            # Configuração do Alembic
 ├── pyproject.toml         # Deps gerenciadas por uv
 ├── Dockerfile
 └── docker-compose.yml
@@ -78,6 +80,57 @@ Acesse em <http://localhost:5001>.
 
 > O banco SQLite (`instance/memorial.db`) e a pasta de uploads são criados
 > automaticamente na primeira execução.
+
+## 🗄️ Migrações de Banco (Alembic)
+
+O projeto usa [Alembic](https://alembic.sqlalchemy.org/) para versionar o schema do
+banco e preservar os dados em alterações futuras.
+
+### Fluxo diário
+
+Ao alterar os modelos em `app/models.py`:
+
+```bash
+# 1. Gera a nova migração automaticamente (compare com o schema atual)
+uv run alembic revision --autogenerate -m "descricao da alteracao"
+
+# 2. Confira o arquivo gerado em migrations/versions/ e ajuste se necessário
+
+# 3. Aplica a migração no banco
+uv run alembic upgrade head
+```
+
+Verificações úteis:
+
+```bash
+# Mostra se o banco está em sincronia com os modelos
+uv run alembic check
+
+# Lista as migrações aplicadas
+uv run alembic current
+
+# Lista as migrações pendentes
+uv run alembic history --verbose
+
+# Reverte a última migração
+uv run alembic downgrade -1
+```
+
+> **Nota:** o `create_app()` do Flask cria as tabelas automaticamente apenas em
+> bancos novos. Para bancos existentes, o schema passa a ser controlado pelo Alembic
+> (o `create_all` é pulado quando `ALEMBIC=1` é definido, como faz o `migrations/env.py`).
+
+### Migrando um banco criado antes do Alembic
+
+Se o banco `instance/memorial.db` já existia antes da adoção do Alembic (tabelas
+criadas pelo `create_all`), as tabelas já existem. Para não perdê-las, **marque a
+revisão inicial como aplicada** sem executar DDL:
+
+```bash
+uv run alembic stamp head
+```
+
+Depois disso, o fluxo normal de `upgrade head` funciona a partir do estado atual.
 
 ## 🛡️ Painel de Administração
 

@@ -47,5 +47,8 @@ def create_app():
     app.register_blueprint(routes.bp)
 
     with app.app_context():
-        db.create_all() 
+        # Quando rodando via Alembic, o create_all é pulado para evitar
+        # conflito com o controle de migrações. (ALEMBIC=1 é setado no env.py)
+        if os.environ.get('ALEMBIC') != '1':
+            db.create_all()
     return app
