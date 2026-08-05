@@ -52,12 +52,14 @@
             {% for memorial in memoriais %}
 
             <div class="list-group-item d-flex justify-content-between align-items-center p-3 mb-2">
-                <img src="
-    {% if memorial.logo_filename %}
-        {{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.logo_filename) }}
-    {% else %}
-        {{ url_for('static', filename='images/default_avatar.png') }}
-    {% endif %}" alt="Foto de Perfil de {{ memorial.nome }}" style="height: 60px; border-radius: 1rem;">
+                {% if memorial.logo_filename %}
+                <img src="{{ url_for('memorial.uploaded_file', memorial_id=memorial.id, filename=memorial.logo_filename) }}" alt="Foto de Perfil de {{ memorial.nome }}" style="height: 60px; border-radius: 1rem;">
+                {% else %}
+                <div class="d-flex align-items-center justify-content-center text-white fw-bold"
+                    style="height: 60px; width: 60px; border-radius: 1rem; background: linear-gradient(135deg, #c2a878, #8a7050); font-size: 1.5rem;">
+                    {{ memorial.nome[0] | upper }}
+                </div>
+                {% endif %}
 
                 <div class="mx-3 flex-grow-1">
                     <h5 class="mb-1">{{ memorial.nome }}</h5>

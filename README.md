@@ -9,26 +9,17 @@ Plataforma web para criação de **memoriais** digitais (homenagens póstumas). 
 perfis de homenageados com nome, datas, biografia, fotos, vídeos, áudios e recebem mensagens
 de visitantes, que podem ser aprovadas/moderação pelo dono do memorial.
 
-O projeto é dividido em duas partes:
+O projeto é um único app Flask com renderização server-side (Jinja2):
 
-- **`app/`** — backend em Flask (Python) com renderização server-side (Jinja2) + API JSON.
-- **`frontend/`** — aplicação web em Angular (atualmente um app separado apontando para a API do Flask).
+- **`app/`** — backend em Flask (Python) com renderização server-side (Jinja2).
 
 ## 🛠️ Tecnologias
 
-**Backend**
 - Python 3.13
 - Flask 3.1 + Flask-Login + Flask-SQLAlchemy
 - SQLite (banco de dados padrão)
 - Gunicorn (servidor WSGI)
 - Pytest (testes)
-
-**Frontend**
-- Angular 22
-- Tailwind CSS 4
-- TypeScript 6
-
-**Infra**
 - [uv](https://github.com/astral-sh/uv) (gerenciador de dependências)
 - Docker + Docker Compose
 
@@ -41,9 +32,8 @@ O projeto é dividido em duas partes:
 │   ├── routes.py          # Todas as rotas (auth, memoriais, comentários, uploads)
 │   ├── models.py          # Modelos: User, Memorial, Comentario
 │   ├── utils.py           # Helpers (formatação de datas)
-│   ├── templates/         # Templates Jinja2 (home, memorial, auth, editar)
+│   ├── templates/         # Templates Jinja2 (landing, home, auth, editar, memorial)
 │   └── static/            # CSS, JS e imagens
-├── frontend/              # Aplicação Angular
 ├── tests/                 # Testes pytest do backend
 ├── instance/              # Banco SQLite e uploads (gerado em runtime)
 ├── main.py                # Ponto de entrada do Flask
@@ -80,10 +70,7 @@ Pré-requisitos: Python 3.13+ e [uv](https://github.com/astral-sh/uv) instalados
 # 1. Instala as dependências
 uv sync
 
-# 2. Ativa o ambiente virtual
-source .venv/bin/activate
-
-# 3. Roda o servidor de desenvolvimento (porta 5001)
+# 2. Roda o servidor de desenvolvimento (porta 5001)
 uv run python main.py
 ```
 
@@ -91,25 +78,6 @@ Acesse em <http://localhost:5001>.
 
 > O banco SQLite (`instance/memorial.db`) e a pasta de uploads são criados
 > automaticamente na primeira execução.
-
-### Frontend (Angular)
-
-O frontend é uma aplicação Angular separada. Para executá-la:
-
-```bash
-cd frontend
-
-# 1. Instala as dependências
-npm install
-
-# 2. Sobe o servidor de desenvolvimento
-npm start
-```
-
-Acesse em <http://localhost:4200> (padrão do `ng serve`).
-
-> O serviço `AuthService` aponta para `http://localhost:5001/api` — o backend Flask
-> precisa estar rodando na porta 5001 para que o login funcione.
 
 ## 🧪 Testes
 
@@ -124,6 +92,7 @@ SQLite temporário isolado.
 
 | Método | Rota                          | Descrição                                   |
 |--------|-------------------------------|---------------------------------------------|
+| GET    | `/`                           | Landing page de apresentação                |
 | GET    | `/registrar`                  | Formulário de registro                      |
 | GET/POST | `/login`                    | Login                                       |
 | GET    | `/logout`                     | Logout (requer login)                       |
@@ -141,5 +110,3 @@ SQLite temporário isolado.
 
 - A `SECRET_KEY` está definida como `'dev'` em `app/__init__.py` — substitua por um
   valor seguro em produção.
-- O `frontend/` parece ser uma reescrita/Angular em progresso; o "app de produção"
-  funcional hoje é o backend Flask com seus templates Jinja2.
