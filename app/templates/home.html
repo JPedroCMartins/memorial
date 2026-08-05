@@ -24,6 +24,12 @@
                 Memorial
             </a>
             <div class="topbar-actions">
+                {% if is_admin %}
+                <a href="{{ url_for('memorial.admin') }}" class="btn-user btn-ghost btn-sm"
+                    title="Administração" aria-label="Administração">
+                    <i class="fas fa-shield-alt"></i>
+                </a>
+                {% endif %}
                 <a href="{{ url_for('memorial.logout') }}" class="btn-user btn-outline btn-sm btn-icon"
                     title="Sair" aria-label="Sair">
                     <i class="fas fa-sign-out-alt"></i>

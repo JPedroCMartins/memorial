@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Administração — Memorial</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo_martins.png') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="{{ url_for('static', filename='css/user.css') }}" rel="stylesheet">
+    <style>
+        .stat-banner {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .stat-banner { grid-template-columns: repeat(4, 1fr); }
+        }
+        .stat-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.1rem;
+        }
+        .stat-box .num {
+            font-family: var(--font-serif);
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1.1;
+        }
+        .stat-box .lbl { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .admin-table { width: 100%; border-collapse: collapse; }
+        .admin-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-muted);
+            padding: 0.7rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .admin-table td {
+            padding: 0.85rem 0.75rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .hash-cell {
+            font-family: monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            max-width: 260px;
+        }
+        .table-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: var(--gold-soft);
+            color: var(--gold);
+            padding: 0.15rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .user-name { font-weight: 600; }
+        .m-list { margin: 0; padding: 0; list-style: none; }
+        .m-list li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-muted); padding: 0.15rem 0; }
+        .m-list li i { color: var(--gold); }
+        .actions-cell { white-space: nowrap; }
+        .mobile-card-head { display: flex; align-items: center; gap: 0.6rem; }
+    </style>
+</head>
+<body>
+
+    <nav class="topbar">
+        <div class="topbar-inner container-user">
+            <a class="brand" href="{{ url_for('memorial.index') }}">
+                <span class="brand-logo">
+                    <img src="{{ url_for('static', filename='images/logo_martins.png') }}" alt="Memorial"
+                        style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                    <span style="display:none;">M</span>
+                </span>
+                Admin
+            </a>
+            <div class="topbar-actions">
+                <a href="{{ url_for('memorial.index') }}" class="btn-user btn-ghost btn-sm">Painel</a>
+                <a href="{{ url_for('memorial.logout') }}" class="btn-user btn-outline btn-sm btn-icon"
+                    title="Sair" aria-label="Sair">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-user" style="padding-bottom:3rem;">
+        <section class="greeting">
+            <h1>Administração</h1>
+            <p>Gerenciamento de usuários, memoriais e senhas.</p>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="mb-2">
+            {% for category, message in messages %}
+            <div class="toast {{ 'error' if category == 'danger' else 'success' }}" style="position:static;animation:none;box-shadow:none;">
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        <div class="stat-banner">
+            <div class="stat-box"><div class="num">{{ dados | length }}</div><div class="lbl">Usuários</div></div>
+            <div class="stat-box"><div class="num">{{ dados | sum(attribute='total_memoriais') }}</div><div class="lbl">Memoriais</div></div>
+            <div class="stat-box"><div class="num">{{ dados | sum(attribute='total_comentarios') }}</div><div class="lbl">Comentários</div></div>
+            <div class="stat-box"><div class="num">{{ admin_emails | length }}</div><div class="lbl">Admins</div></div>
+        </div>
+
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Usuário</th>
+                            <th>Memoriais</th>
+                            <th>Hash da senha</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for d in dados %}
+                        <tr>
+                            <td>
+                                <div class="mobile-card-head">
+                                    <span class="user-name">{{ d.usuario.username }}</span>
+                                    {% if d.usuario.email in admin_emails %}
+                                    <span class="chip"><i class="fas fa-shield-alt"></i>Admin</span>
+                                    {% endif %}
+                                </div>
+                                <small class="muted">{{ d.usuario.email }}</small><br>
+                                <small class="muted">ID {{ d.usuario.id }}</small>
+                            </td>
+                            <td>
+                                {% set memoriais = d.memoriais %}
+                                {% if memoriais %}
+                                <ul class="m-list">
+                                    {% for m in memoriais %}
+                                    <li><i class="fas fa-heart"></i>{{ m.nome }}<small class="muted">({{ m.comentarios | length }} cmt)</small></li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <small class="muted">—</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code class="hash-cell">{{ d.usuario.password_hash }}</code>
+                            </td>
+                            <td class="actions-cell">
+                                <button type="button" class="btn-user btn-gold btn-sm"
+                                    onclick="openReset({{ d.usuario.id }}, '{{ d.usuario.username }}')">
+                                    <i class="fas fa-key"></i> Resetar senha
+                                </button>
+                                {% if d.usuario.email not in admin_emails %}
+                                <button type="button" class="btn-user btn-danger btn-sm"
+                                    onclick="excluirUsuario({{ d.usuario.id }}, '{{ d.usuario.username }}')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4" style="text-align:center;padding:2.5rem;" class="muted">Nenhum usuário registrado.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer class="page-footer">
+        &copy; 2026 J. Pedro C. Martins. Todos os direitos reservados.
+    </footer>
+
+    <!-- Modal: resetar senha -->
+    <div class="modal-user-overlay" id="modalReset">
+        <div class="modal-user" style="max-width:420px;">
+            <div class="modal-user-head">
+                <h3><i class="fas fa-key" style="color:var(--gold);margin-right:0.5rem;"></i>Redefinir senha</h3>
+                <button type="button" class="modal-user-close" aria-label="Fechar" onclick="closeModal(this)">&times;</button>
+            </div>
+            <form method="POST" id="formReset">
+                <div class="modal-user-body">
+                    <p class="muted" style="margin-top:0;">Defina uma nova senha para: <strong id="resetUser" style="color:var(--text);"></strong></p>
+                    <div class="field">
+                        <label for="nova_senha">Nova senha</label>
+                        <div class="password-wrap">
+                            <input type="password" class="input-user" id="nova_senha" name="nova_senha"
+                                placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
+                            <button type="button" class="password-toggle" aria-label="Mostrar senha"
+                                onclick="togglePassword(this, '#nova_senha')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-user-foot">
+                    <button type="button" class="btn-user btn-ghost" onclick="closeModal(this)">Cancelar</button>
+                    <button type="submit" class="btn-user btn-gold"><i class="fas fa-check"></i> Redefinir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/user.js') }}"></script>
+    <script>
+        function togglePassword(btn, selector) {
+            const input = document.querySelector(selector);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            btn.querySelector('i').className = isPassword ? 'fas fa-eye-slash' : 'fas fa-eye';
+            btn.setAttribute('aria-label', isPassword ? 'Ocultar senha' : 'Mostrar senha');
+        }
+
+        function openReset(id, nome) {
+            const form = document.getElementById('formReset');
+            form.action = '/admin/usuario/' + id + '/resetar-senha';
+            document.getElementById('resetUser').textContent = nome;
+            document.getElementById('nova_senha').value = '';
+            openModal(document.getElementById('modalReset'));
+        }
+
+        function excluirUsuario(id, nome) {
+            confirmDialog({
+                titulo: 'Excluir usuário?',
+                mensagem: 'O usuário <strong>' + nome + '</strong> e todos os seus memoriais e arquivos serão removidos permanentemente. Esta ação não pode ser desfeita.',
+                onConfirm: function () {
+                    var form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/admin/usuario/' + id + '/excluir';
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

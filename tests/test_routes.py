@@ -214,3 +214,73 @@ class TestAutorizacao:
         client.post('/login', data={'email': 'outro@auth.com', 'password': 'x'})
         resp = client.post(f'/m/delete/{mid}')
         assert resp.status_code == 403
+
+# --------------------------------------------------------------------------
+# Administração
+# --------------------------------------------------------------------------
+
+class TestAdmin:
+    def test_admin_negado_sem_login(self, client):
+        assert client.get('/admin').status_code in (301, 302)
+
+    def test_admin_negado_nao_admin(self, app, client, auth):
+        auth.register('comum', 'comum@teste.com')
+        auth.login('comum@teste.com')
+        assert client.get('/admin').status_code == 403
+
+    def test_admin_lista_usuarios(self, app, client, auth):
+        # admin se cadastra e loga
+        auth.register('admin', 'admin@teste.com')
+        auth.login('admin@teste.com')
+
+        # um usuário comum
+        client2 = app.test_client()
+        client2.post('/registrar', data={
+            'name': 'Maria', 'email': 'maria@teste.com', 'password': 'senha123'
+        }, follow_redirects=True)
+
+        resp = client.get('/admin')
+        assert resp.status_code == 200
+        assert b'admin@teste.com' in resp.data
+        assert b'maria@teste.com' in resp.data
+
+    def test_admin_resetar_senha(self, app, client, auth):
+        auth.register('admin', 'admin@teste.com')
+        auth.login('admin@teste.com')
+
+        # cria usuário comum
+        client2 = app.test_client()
+        client2.post('/registrar', data={
+            'name': 'Joao', 'email': 'joao@teste.com', 'password': 'senha123'
+        }, follow_redirects=True)
+
+        with app.app_context():
+            u = User.query.filter_by(email='joao@teste.com').first()
+            uid = u.id
+
+        resp = client.post(f'/admin/usuario/{uid}/resetar-senha', data={
+            'nova_senha': 'nova-senha-123'
+        })
+        assert resp.status_code in (301, 302)
+
+        with app.app_context():
+            u = User.query.get(uid)
+            assert u.check_password('nova-senha-123')
+            assert not u.check_password('senha123')
+
+    def test_admin_excluir_usuario(self, app, client, auth):
+        auth.register('admin', 'admin@teste.com')
+        auth.login('admin@teste.com')
+
+        client2 = app.test_client()
+        client2.post('/registrar', data={
+            'name': 'Pedro', 'email': 'pedro@teste.com', 'password': 'senha123'
+        }, follow_redirects=True)
+
+        with app.app_context():
+            u = User.query.filter_by(email='pedro@teste.com').first()
+            uid = u.id
+
+        client.post(f'/admin/usuario/{uid}/excluir')
+        with app.app_context():
+            assert User.query.get(uid) is None

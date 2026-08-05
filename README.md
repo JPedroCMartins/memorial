@@ -79,6 +79,27 @@ Acesse em <http://localhost:5001>.
 > O banco SQLite (`instance/memorial.db`) e a pasta de uploads são criados
 > automaticamente na primeira execução.
 
+## 🛡️ Painel de Administração
+
+O sistema possui um painel administrativo em `/admin` (disponível após login) que
+permite listar todos os usuários, ver seus memoriais, visualizar o **hash** das senhas,
+redefinir senhas e excluir contas.
+
+Para se tornar administrador, defina a lista de e-mails autorizados na variável de
+ambiente `ADMIN_EMAILS` (separados por vírgula):
+
+```bash
+# localmente
+ADMIN_EMAILS=admin@example.com uv run python main.py
+
+# no docker-compose, adicione em environment:
+#   ADMIN_EMAILS: admin@example.com
+```
+
+> **Segurança:** as senhas são armazenadas com **hash** (scrypt) via Werkzeug — nunca em
+> texto plano. O painel exibe o hash e permite *redefinir* a senha de um usuário, mas
+> não é possível recuperar a senha original.
+
 ## 🧪 Testes
 
 ```bash
@@ -105,6 +126,9 @@ SQLite temporário isolado.
 | POST   | `/comentario/<id>/toggle`     | Aprovar/ocultar comentário (dono)           |
 | POST   | `/comentario/<id>/apagar`     | Apagar comentário (dono)                    |
 | GET    | `/uploads/<id>/<arquivo>`     | Servir arquivos de upload                   |
+| GET    | `/admin`                      | Painel administrativo (admin)               |
+| POST   | `/admin/usuario/<id>/resetar-senha` | Redefine senha de um usuário (admin)  |
+| POST   | `/admin/usuario/<id>/excluir` | Exclui usuário e memoriais (admin)          |
 
 ## ⚠️ Observações
 

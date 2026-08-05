@@ -13,6 +13,21 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'mp3', 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def is_admin_user(user=None):
+    user = user or current_user
+    if not user.is_authenticated:
+        return False
+    return user.email in current_app.config.get('ADMIN_EMAILS', [])
+
+def admin_required(func):
+    from functools import wraps
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if not is_admin_user():
+            abort(403)
+        return func(*args, **kwargs)
+    return wrapper
+
 #--- landing route ---
 @bp.route('/')
 def landing():
@@ -24,7 +39,7 @@ def landing():
 def index():
     memoriais = Memorial.query.filter_by(user_id=current_user.id).all()
 
-    return render_template('home.html', user=current_user, memoriais=memoriais)
+    return render_template('home.html', user=current_user, memoriais=memoriais, is_admin=is_admin_user())
 
 #--- view memorial route ---
 @bp.route('/m/<url_personalizada>')
@@ -426,3 +441,67 @@ def logout():
     flash('Você saiu do sistema.', 'info')
     return redirect(url_for('memorial.index'))
 #--- END REGISTRATION AND LOGIN ROUTES ---
+
+# ============================================================
+# ADMIN
+# ============================================================
+@bp.route('/admin')
+@login_required
+@admin_required
+def admin():
+    usuarios = User.query.order_by(User.id).all()
+
+    dados = []
+    for u in usuarios:
+        memoriais = u.memoriais if hasattr(u, 'memoriais') else Memorial.query.filter_by(user_id=u.id).all()
+        total_comentarios = sum(len(m.comentarios) for m in memoriais)
+        dados.append({
+            'usuario': u,
+            'memoriais': memoriais,
+            'total_memoriais': len(memoriais),
+            'total_comentarios': total_comentarios,
+        })
+
+    return render_template('admin.html', dados=dados, admin_emails=current_app.config.get('ADMIN_EMAILS', []))
+
+
+@bp.route('/admin/usuario/<int:user_id>/resetar-senha', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    usuario = User.query.get_or_404(user_id)
+    nova_senha = request.form.get('nova_senha', '').strip()
+
+    if len(nova_senha) < 6:
+        flash('A nova senha deve ter pelo menos 6 caracteres.', 'danger')
+        return redirect(url_for('memorial.admin'))
+
+    usuario.set_password(nova_senha)
+    db.session.commit()
+    flash(f'Senha do usuário "{usuario.username}" redefinida com sucesso.', 'success')
+    return redirect(url_for('memorial.admin'))
+
+
+@bp.route('/admin/usuario/<int:user_id>/excluir', methods=['POST'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    usuario = User.query.get_or_404(user_id)
+
+    if is_admin_user(usuario):
+        flash('Não é possível excluir outro administrador.', 'danger')
+        return redirect(url_for('memorial.admin'))
+
+    # Exclui os memoriais do usuário (com arquivos no disco)
+    memorials = Memorial.query.filter_by(user_id=user_id).all()
+    for m in memorials:
+        memory_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(m.id))
+        if os.path.exists(memory_path):
+            shutil.rmtree(memory_path, ignore_errors=True)
+        db.session.delete(m)
+
+    db.session.delete(usuario)
+    db.session.commit()
+    flash(f'Usuário "{usuario.username}" e todos os seus memoriais foram excluídos.', 'success')
+    return redirect(url_for('memorial.admin'))
+#--- END ADMIN ---

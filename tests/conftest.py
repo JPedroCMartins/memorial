@@ -19,6 +19,7 @@ def app(tmp_path):
     test_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + str(
         tmp_path / 'test.db'
     )
+    test_app.config['ADMIN_EMAILS'] = ['admin@teste.com']
 
     with test_app.app_context():
         db.drop_all()

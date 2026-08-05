@@ -7,6 +7,8 @@ services:
     container_name: projeto-web-5001
     ports:
       - "8001:5001"
+    environment:
+      - ADMIN_EMAILS=${ADMIN_EMAILS:-}
     volumes:
       - ./instance:/app/instance
     restart: unless-stopped

@@ -34,6 +34,9 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'memorial.login' # MOVA para cá e especifique o blueprint se necessário
     app.config['UPLOAD_FOLDER'] = os.path.join(app.instance_path, 'uploads')    # Lembre-se de adicionar o user_loader aqui também
+    app.config['ADMIN_EMAILS'] = [
+        e.strip() for e in os.environ.get('ADMIN_EMAILS', '').split(',') if e.strip()
+    ]
     from .models import User  # Supondo que seu modelo esteja em app/models.py
     @login_manager.user_loader
     def load_user(user_id):
