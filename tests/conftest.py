@@ -26,7 +26,10 @@ def app(tmp_path, monkeypatch):
 
     with test_app.app_context():
         db.create_all()
-        yield test_app
+
+    yield test_app
+
+    with test_app.app_context():
         db.session.remove()
 
 
@@ -44,13 +47,14 @@ def auth(client):
             self._client = client
             self.passw = user_password
 
-        def register(self, name='Ana Teste', email='ana@teste.com'):
+        def register(self, name='Ana Teste', email='ana@teste.com', plano='mensal'):
             return self._client.post(
                 '/registrar',
                 data={
                     'name': name,
                     'email': email,
                     'password': self.passw,
+                    'plano': plano,
                 },
                 follow_redirects=True,
             )
