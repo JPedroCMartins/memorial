@@ -2,7 +2,7 @@ services:
   web:
     build:
       context: .
-    container_name: projeto-web-5001
+    container_name: projeto-web
     ports:
       - "${PORT:-8001}:5001"
     environment:
