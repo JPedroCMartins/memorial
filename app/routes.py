@@ -2,7 +2,7 @@ import shutil
 import uuid
 from flask import Blueprint, abort, jsonify, render_template, request, redirect, send_from_directory, url_for, flash, current_app
 from flask_login import current_user, login_required, login_user, logout_user
-from .models import Memorial, User, Comentario
+from .models import User, Memorial, Comentario
 from . import db
 from urllib.parse import urlparse, urljoin # Importado para a validação do redirect
 from werkzeug.utils import secure_filename
