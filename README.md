@@ -43,6 +43,18 @@ visitantes, que só aparecem após aprovação do dono do memorial.
 
 ## 🚀 Como rodar
 
+### Sem Docker, com um comando (`run.sh`)
+
+```bash
+./run.sh          # dev: Flask (debug, porta 5001) + Vite (porta 5173) juntos; Ctrl+C para os dois
+./run.sh prod     # build do React + migrações + Gunicorn servindo tudo (porta 5001)
+```
+
+O script verifica `uv`/Node, cria o `.env` a partir do `.env.example` se faltar, instala as
+dependências e roda `alembic upgrade head`. Ajustes por variável: `API_PORT`, `WEB_PORT`
+(dev), `PORT`, `HOST`, `WORKERS` (prod) e `SKIP_INSTALL=1`. O modo `prod` exige uma
+`SECRET_KEY` real.
+
 ### Desenvolvimento (dois terminais)
 
 Pré-requisitos: Python 3.13+, [uv](https://github.com/astral-sh/uv) e Node 22+.
