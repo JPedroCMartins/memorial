@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   Identidade visual do Memorial (portada de app/static/css/*.css)
+   Área do usuário: dark elegante com acento dourado.
+   Página pública/landing: papel claro e quente com o mesmo dourado.
+   ============================================================ */
+@theme {
+  --color-bg: #0f0f10;
+  --color-bg-soft: #17181a;
+  --color-card: #1e1f22;
+  --color-card-hover: #24262a;
+  --color-line: #2a2b2f;
+  --color-ink: #eae7e2;
+  --color-muted: #9a958c;
+  --color-gold: #c2a878;
+  --color-gold-light: #d4b87e;
+  --color-gold-dark: #a88d5c;
+  --color-gold-hover: #ab9265;
+  --color-gold-soft: rgb(194 168 120 / 0.12);
+  --color-danger: #d9534f;
+  --color-success: #4caf72;
+  --color-warning: #e0a83c;
+
+  /* Tema claro da página pública */
+  --color-paper: #f7f6f3;
+  --color-paper-card: #fdfdfc;
+  --color-paper-line: #f0ede6;
+  --color-paper-ink: #2c2c2c;
+  --color-paper-text: #4a4a4a;
+
+  --font-serif: 'Playfair Display', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  --radius-card: 16px;
+  --radius-field: 10px;
+  --shadow-soft: 0 8px 30px rgb(0 0 0 / 0.35);
+  --shadow-gold: 0 4px 18px rgb(194 168 120 / 0.25);
+
+  --animate-fade-up: fade-up 0.5s ease-out both;
+  --animate-toast: toast-in 0.3s ease-out both;
+  --animate-spin-slow: spin 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes toast-in {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer base {
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    @apply bg-bg text-ink font-sans antialiased leading-normal;
+  }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--color-bg); }
+  ::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 8px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--color-gold-dark); }
+  :focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
+}
+
+@layer components {
+  .container-user { @apply mx-auto w-full max-w-[1080px] px-5; }
+
+  /* --- Botões --- */
+  .btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-0 px-6 py-3
+      text-[0.95rem] font-semibold no-underline transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+  .btn-gold {
+    @apply text-[#141414];
+    background: linear-gradient(135deg, var(--color-gold-light), var(--color-gold-dark));
+    box-shadow: var(--shadow-gold);
+  }
+  .btn-gold:hover { box-shadow: 0 6px 24px rgb(194 168 120 / 0.4); }
+  .btn-outline { @apply border border-line bg-transparent text-ink hover:bg-card; }
+  .btn-ghost { @apply bg-transparent px-4 py-2.5 text-muted hover:bg-card hover:text-ink; }
+  .btn-danger { @apply bg-danger/12 text-danger hover:bg-danger/20; }
+  .btn-sm { @apply px-4 py-2 text-[0.85rem]; }
+  .btn-icon { @apply size-10 shrink-0 rounded-full p-0; }
+
+  /* --- Formulários --- */
+  .field-label {
+    @apply mb-1.5 block text-[0.8rem] font-semibold tracking-[0.8px] text-muted uppercase;
+  }
+  .input {
+    @apply w-full appearance-none rounded-[var(--radius-field)] border border-line bg-bg-soft px-4 py-3.5
+      text-[0.95rem] text-ink transition placeholder:text-[#6b665e]
+      focus:border-gold focus:shadow-[0_0_0_3px_var(--color-gold-soft)] focus:outline-none;
+  }
+  textarea.input { @apply min-h-[90px] resize-y; }
+  .field-hint { @apply mt-1.5 text-xs text-muted; }
+
+  .badge { @apply inline-block rounded-full px-2.5 py-0.5 text-[0.7rem] font-semibold tracking-[0.5px]; }
+
+  /* --- Página pública (tema claro) --- */
+  .paper-title { @apply mb-10 text-center font-serif text-[1.8rem] font-normal text-paper-ink md:text-[2.2rem]; }
+  .divider-elegant {
+    @apply my-14 h-px;
+    background: linear-gradient(to right, transparent, #e0e0e0, transparent);
+  }
+  .btn-paper {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full bg-gold px-10 py-3.5 font-semibold
+      tracking-[1px] text-white transition hover:-translate-y-0.5 hover:bg-gold-hover disabled:opacity-60;
+  }
+  .btn-paper-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border-2 border-gold px-10 py-3 font-semibold
+      tracking-[1px] text-gold transition hover:bg-gold hover:text-white;
+  }
+  .input-paper {
+    @apply w-full rounded-lg border border-[#e0e0e0] bg-[#fafafa] px-4 py-3 text-paper-text
+      focus:border-gold focus:bg-white focus:shadow-[0_0_0_4px_rgb(194_168_120/0.2)] focus:outline-none;
+  }
+  .fade-mask {
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

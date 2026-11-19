@@ -20,5 +20,8 @@ Thumbs.db
 
 docker-compose.override.yml
 
-./instance
-instance
+instance/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/

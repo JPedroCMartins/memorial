@@ -1,87 +1,91 @@
 # AGENTS.md — Guia de manutenção do projeto Memorial
 
-Este arquivo orienta agentes de IA (opencode) e desenvolvedores a manter este código
-de forma consistente. **Leia antes de alterar qualquer arquivo.**
+Este arquivo orienta agentes de IA e desenvolvedores a manter este código de forma
+consistente. **Leia antes de alterar qualquer arquivo.**
 
 ## Visão geral
 
-Aplicação web Flask (renderização server-side com Jinja2) para criar memoriais digitais.
-Monorepo de um único app Flask em `app/`. **Todo o backend está em `app/routes.py`**
-(single blueprint `memorial`).
+- **Backend** (`app/`): Flask como **API JSON** sob `/api`, mais `/uploads/...` e o
+  fallback que serve o build do React (`frontend/dist`). Todas as rotas ficam em
+  `app/routes.py` (blueprint único `memorial`). Modelos em `app/models/`.
+- **Frontend** (`frontend/`): React 19 + TypeScript + Tailwind v4 (Vite), react-router,
+  TanStack Query, ícones `lucide-react`.
+- Mesma origem em dev (proxy do Vite) e em produção (Flask serve o `dist`). Por isso a
+  autenticação é por **cookie de sessão** + **CSRF** — não há CORS nem JWT.
 
 ## Comandos essenciais
 
-Rodar **sempre** a partir da raiz do projeto, com o venv `uv`:
+Sempre a partir da raiz do projeto:
 
 ```bash
-# Instalar dependências
-uv sync
+uv sync                                   # deps Python
+FLASK_DEBUG=1 PORT=5001 uv run python main.py   # API em dev
+cd frontend && npm install && npm run dev       # React em dev (http://localhost:5173)
 
-# Rodar servidor dev (default porta 5001; use PORT para mudar)
-PORT=5100 uv run python main.py
+uv run pytest                             # testes do backend (banco temporário)
+cd frontend && npm test && npm run build  # Vitest + tsc + build
 
-# Rodar testes (usam banco temporário isolado, nunca tocam instance/memorial.db)
-uv run pytest
-
-# Verificar migrações (compare models.py com o schema)
-uv run alembic check
-uv run alembic current
+uv run alembic check                      # modelos x migrações
 ```
 
-## Convenções de código (IMPORTANTE)
+## Convenções (IMPORTANTE)
 
-1. **Idioma das strings/frontend:** PT-BR (`nome_autor`, `frase_efeito`, templates).
-2. **Nada de ESLint/typecheck/linter configurado.** Sem pré-commit hooks. O único
-   check automatizado são os testes pytest.
-3. **Nunca edite regressivamente o schema sem migração Alembic.** Ao alterar
-   `app/models.py`, gere `alembic revision --autogenerate` e rode `upgrade head`.
-4. **Banco de dados:** padrão é SQLite em `instance/memorial.db`. Jamais dar
-   `rm`/reset nesse arquivo — contém dados reais (usuários, memoriais, comentários).
-5. **Uploads:** salvos em `instance/uploads/<memorial_id>/`. Nomes de arquivo são
-   `uuid4().hex` + extensão. Galerias (`gallery_images/videos/audios`) são strings
-   separadas por vírgula; `logo_filename`/`banner_filename` são nomes únicos.
-6. **Autorização:** dono do memorial = `memorial.user_id == current_user.id`
-   (responde 403 via `abort(403)`). Admin = e-mail em `ADMIN_EMAILS`
-   (decorator `admin_required` em `routes.py`).
-7. **Não remover comentários existentes** das rotas — o `routes.py` está
-   propositalmente comentado em PT-BR para didática do autor.
-8. **Extensões Flask** (`db`, `login_manager`) são instanciadas fora da factory em
-   `app/__init__.py` e inicializadas dentro de `create_app()`.
+1. **Idioma:** PT-BR em nomes de campos, mensagens, componentes e textos de UI
+   (`nome_autor`, `frase_efeito`, `MemorialPublico`, `useToast`...).
+2. **Contrato da API:** respostas de sucesso em JSON com chave nomeada
+   (`{"memorial": ...}`, `{"memoriais": [...]}`); erros sempre `{"erro": "...", "campos"?: [...]}`
+   via helper `erro()` em `routes.py`. Serialização centralizada em `memorial_to_dict`,
+   `comentario_to_dict`, `usuario_to_dict`. Ao mudar um desses, atualize `frontend/src/types.ts`.
+3. **Requisições do frontend** só via `frontend/src/lib/api.ts` (`request()`/`api.*`) — ele
+   cuida do token CSRF e converte erros em `ApiError`. Não use `fetch` direto nas páginas.
+4. **Identidade visual:** tokens em `frontend/src/index.css` (`@theme`): área logada dark
+   (`bg`, `card`, `line`, `ink`, `muted`, `gold`...) e páginas públicas em papel claro
+   (`paper*`). Fontes Playfair Display (`font-serif`, títulos) e Inter (`font-sans`).
+   Reutilize as classes `.btn`, `.btn-gold`, `.input`, `.field-label`, `.btn-paper` etc.
+   Não introduza outras bibliotecas de UI.
+5. **Schema:** nunca altere `app/models/` sem migração Alembic
+   (`alembic revision --autogenerate`, revise e `upgrade head`).
+6. **Banco real:** `instance/memorial.db` contém dados reais. Jamais apagar/resetar.
+7. **Uploads:** `instance/uploads/<memorial_id>/`, nome `uuid4().hex.<ext>`. Galerias
+   (`gallery_images/videos/audios`) são strings separadas por vírgula; `logo_filename`/
+   `banner_filename` são nomes únicos. Campos do multipart: `logo`, `banner`, `imagens`,
+   `videos`, `audios`; tipos na API: `logo|banner|imagem|video|audio` (`TIPOS_ARQUIVO`).
+8. **Autorização:** dono = `memorial.user_id == current_user.id` (use `memorial_do_dono()`,
+   que responde 404/403). Admin = e-mail em `ADMIN_EMAILS` (`admin_required`).
+9. **Comentários didáticos** em PT-BR no `routes.py` devem ser mantidos.
+10. Extensões (`db`, `login_manager`, `csrf`) são instanciadas fora da factory em
+    `app/__init__.py` e inicializadas dentro de `create_app()`.
 
-## Armadilhas conhecidas (gotchas)
+## Armadilhas conhecidas
 
-- **`create_all()` vs Alembic:** `app/__init__.py` roda `db.create_all()` apenas
-  quando a env `ALEMBIC` **não** é `1`. O `migrations/env.py` seta `ALEMBIC=1`.
-  Se precisar testar migrations, defina essa env.
-- **Banco pré-Alembic:** se o DB nao tem registro em `alembic_version` mas as tabelas
-  existem, rodar `uv run alembic stamp head` (NÃO `upgrade`) para não dropar dados.
-- **Porta 5001 pode estar ocupada** (ex: outro projeto). Use `PORT=xxxx`.
-- **`User` não tem relationship `memoriais`;** `routes.py` usa fallback via
-  `hasattr(u, 'memoriais')` mas na prática filtra com
-  `Memorial.query.filter_by(user_id=...)`.
-- **Uploads servidos por `/uploads/<memorial_id>/<path:filename>`** com
-  `send_from_directory` — o caminho no template usa o id do memorial + nome salvo.
-- **Login exige e-mail no form como `email`** e senha como `password` (templates
-  auth). O campo de registro é `name` + `email` + `password`.
-- **Hash de senha:** `password_hash` tem 256 chars. `set_password`/`check_password`
-  usam Werkzeug. Não quebre compatibilidade (testes validam).
+- **`create_all()` vs Alembic:** só roda quando `ALEMBIC` ≠ `1`; `migrations/env.py` seta
+  `ALEMBIC=1` e dá prioridade a `SQLALCHEMY_DATABASE_URI` do ambiente (antes do `.env`).
+- **Banco pré-Alembic:** `uv run alembic stamp 5eda9a7f3788` e depois `upgrade head`
+  (a revisão `a1c3e5f7b9d2` desduplica slugs e cria a restrição única). NÃO use `stamp head`.
+- **`load_dotenv()`** procura `.env` subindo diretórios: num worktree ele pode ler o `.env`
+  do repositório principal (ex.: Postgres). Testes sobrescrevem `DATABASE_URL`.
+- **Postgres:** a URL `postgresql://` usa o driver `psycopg2` (`psycopg2-binary` já é dependência).
+- **CSRF em testes:** `tests/conftest.py` define `WTF_CSRF_ENABLED=False`; há testes em
+  `TestInfra` que religam para validar o fluxo com token.
+- **Novas rotas do React** funcionam automaticamente no Flask (fallback `spa()`), desde que
+  não comecem com `/api/` ou `/uploads/`.
+- `User` não tem relationship `memoriais`; filtre com `Memorial.query.filter_by(user_id=...)`.
+- Porta 5001 pode estar ocupada: use `PORT=xxxx` e `FLASK_URL=http://127.0.0.1:xxxx npm run dev`.
 
 ## Regras de teste
 
-- **Nunca** rodar os testes contra o `instance/memorial.db`. As fixtures em
-  `tests/conftest.py` usam `monkeypatch` de `DATABASE_URL`/`UPLOAD_FOLDER` para um
-  SQLite temporário.
-- Sempre rodar `uv run pytest` após alterações e garantir que **todos** passam antes
-  de concluir.
-- Adicionar testes em `tests/test_routes.py` no estilo das classes existentes
-  (`TestAuth`, `TestMemorial`, `TestComentarios`, `TestAdmin`, `TestAutorizacao`).
+- **Nunca** rodar testes contra `instance/memorial.db`; as fixtures usam SQLite temporário.
+- Backend: adicione testes em `tests/test_routes.py` nas classes existentes (`TestInfra`,
+  `TestAuth`, `TestMemorial`, `TestComentarios`, `TestAutorizacao`, `TestAdmin`).
+- Frontend: testes em `frontend/src/test/` (Vitest + Testing Library).
+- Antes de concluir: `uv run pytest` **e** `cd frontend && npm test && npm run build` sem falhas.
 
-## Fluxo de mudanças (checklist)
+## Checklist de mudanças
 
-1. Leia o modelo/migrations antes de mexer no DB.
-2. Edite código seguindo as convenções PT-BR.
-3. Se alterou `models.py`: crie + revise migração Alembic e aplique.
-4. Rode `uv run pytest` e confira 0 falhas.
-5. Hack de smoke test: `uv run python main.py` em porta livre e `curl` na rota
-   alterada.
-6. Não commite `instance/` (está no `.gitignore`) nem `.env`.
+1. Leia modelos/migrações antes de mexer no banco.
+2. Backend: valide entrada, responda erros com `erro()`, mantenha o contrato da API.
+3. Frontend: tipos em `types.ts`, chamadas em `api.ts`, estilos com os tokens do tema.
+4. Alterou `app/models/`? Crie e revise a migração.
+5. Rode todos os testes e o build.
+6. Smoke test: Flask + `npm run dev`, percorra a tela alterada.
+7. Não commite `instance/`, `.env`, `frontend/node_modules/` nem `frontend/dist/`.

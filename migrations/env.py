@@ -12,6 +12,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Sinaliza para create_app() pular create_all (o Alembic controla as tabelas)
 os.environ['ALEMBIC'] = '1'
 
+# Se uma URL explícita foi passada (testes/deploy), ela tem prioridade sobre o
+# .env. Precisa ser definida ANTES do create_app(), pois o Flask-SQLAlchemy cria
+# o engine já no init_app (e falharia se o driver do .env não estiver instalado).
+if os.environ.get('SQLALCHEMY_DATABASE_URI'):
+    os.environ['DATABASE_URL'] = os.environ['SQLALCHEMY_DATABASE_URI']
+
 from app import create_app, db
 
 # this is the Alembic Config object, which provides

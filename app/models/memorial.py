@@ -8,7 +8,7 @@ class Memorial(db.Model):
     falecimento = db.Column(db.String(256), nullable=False)
     frase_efeito = db.Column(db.String(512), nullable=False)
     biografia = db.Column(db.Text, nullable=False)
-    url_personalizada = db.Column(db.String(256), nullable=False)
+    url_personalizada = db.Column(db.String(256), nullable=False, unique=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     # --- NOVAS COLUNAS PARA OS ARQUIVOS ---
     logo_filename = db.Column(db.String(256), nullable=True)

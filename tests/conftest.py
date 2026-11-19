@@ -1,6 +1,5 @@
 import os
 import sys
-import tempfile
 
 import pytest
 
@@ -40,36 +39,26 @@ def client(app):
 
 @pytest.fixture()
 def auth(client):
-    """Helper para registrar/logar um usuário."""
+    """Helper para registrar/logar um usuário via API JSON."""
 
     class AuthActions:
         def __init__(self, client, user_password='senha-segura-123'):
             self._client = client
             self.passw = user_password
 
-        def register(self, name='Ana Teste', email='ana@teste.com', plano='mensal'):
+        def register(self, name='Ana Teste', email='ana@teste.com', password=None):
             return self._client.post(
-                '/registrar',
-                data={
-                    'name': name,
-                    'email': email,
-                    'password': self.passw,
-                    'plano': plano,
-                },
-                follow_redirects=True,
+                '/api/auth/registrar',
+                json={'name': name, 'email': email, 'password': password or self.passw},
             )
 
-        def login(self, email='ana@teste.com'):
+        def login(self, email='ana@teste.com', password=None):
             return self._client.post(
-                '/login',
-                data={'email': email, 'password': self.passw},
-                follow_redirects=True,
+                '/api/auth/login',
+                json={'email': email, 'password': password or self.passw},
             )
 
         def logout(self):
-            return self._client.get('/logout', follow_redirects=True)
-
-        def post(self, url, **kwargs):
-            return self._client.post(url, **kwargs)
+            return self._client.post('/api/auth/logout')
 
     return AuthActions(client)
