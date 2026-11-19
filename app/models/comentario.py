@@ -1,13 +1,18 @@
 from app import db
 from sqlalchemy import DateTime
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def agora_utc():
+    # Substitui o datetime.utcnow() (obsoleto): UTC sem fuso, compatível com as linhas antigas.
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Comentario(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nome_autor = db.Column(db.String(100), nullable=False)
     texto = db.Column(db.Text, nullable=False)
-    data_criacao = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    data_criacao = db.Column(db.DateTime, nullable=False, default=agora_utc)
     is_visible = db.Column(db.Boolean, default=False, nullable=False)
     memorial_id = db.Column(db.Integer, db.ForeignKey('memorial.id'), nullable=False)
 

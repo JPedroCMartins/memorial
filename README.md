@@ -2,297 +2,157 @@
 
 ![Python](https://img.shields.io/badge/Python-3.13-blue?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.1-black?logo=flask)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Tailwind](https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?logo=docker&logoColor=white)
-![uv](https://img.shields.io/badge/uv-Fastest_Manager-purple)
 
-Plataforma web para criação de **memoriais** digitais (homenagens póstumas). Usuários criam
-perfis de homenageados com nome, datas, biografia, fotos, vídeos, áudios e recebem mensagens
-de visitantes, que podem ser aprovadas/moderação pelo dono do memorial.
+Plataforma para criação de **memoriais** digitais (homenagens póstumas). Usuários criam
+memoriais com nome, datas, biografia, fotos, vídeos e áudios, e recebem mensagens de
+visitantes, que só aparecem após aprovação do dono do memorial.
 
-O projeto é um único app Flask com renderização server-side (Jinja2):
+- **`app/`** — backend Flask que expõe uma **API JSON** em `/api` e serve os uploads e o build do React.
+- **`frontend/`** — SPA em **React + TypeScript + Tailwind CSS** (Vite).
+- **Banco**: SQLite por padrão (`instance/memorial.db`) ou Postgres via `DATABASE_URL`.
+- **Uploads**: `instance/uploads/<id_do_memorial>/`.
 
-- **`app/`** — backend em Flask (Python) com renderização server-side (Jinja2).
-- **Banco**: SQLite por padrão (arquivo em `instance/memorial.db`).
-- **Uploads**: armazenados em `instance/uploads/<id_do_memorial>/`.
-
-> **Dica para manutenção com IA (opencode):** o arquivo [`AGENTS.md`](./AGENTS.md) concentra
-> as convenções, comandos e armadilhas do projeto. Leia-o antes de alterar código.
-
-## 🛠️ Tecnologias
-
-- Python 3.13
-- Flask 3.1 + Flask-Login + Flask-SQLAlchemy
-- SQLite (banco de dados padrão)
-- Alembic (migrações de schema)
-- Gunicorn (servidor WSGI)
-- Pytest (testes)
-- [uv](https://github.com/astral-sh/uv) (gerenciador de dependências)
-- Docker + Docker Compose
+> **Manutenção com IA:** leia [`AGENTS.md`](./AGENTS.md) antes de alterar código.
 
 ## 📁 Estrutura
 
 ```
 .
 ├── app/
-│   ├── __init__.py        # Factory create_app + config do banco + extensões
-│   ├── models.py          # Modelos SQLAlchemy: User, Memorial, Comentario
-│   ├── routes.py          # Todas as rotas (auth, memoriais, comentários, uploads, admin)
-│   ├── utils.py           # Helpers (formatação de datas)
-│   ├── templates/         # Templates Jinja2 (landing, home, auth, editar, memorial)
-│   ├── static/
-│   │   ├── css/           # Estilos (user.css, memorial_publicado.css)
-│   │   ├── js/            # Scripts (user.js, memorial_publicado.js)
-│   │   └── images/        # Imagens estáticas (logo_martins.png)
-├── migrations/            # Migrações Alembic (versions/ + env.py)
-├── tests/                 # Testes pytest do backend
-├── instance/              # Banco SQLite e uploads (gerado em runtime, fora do git)
-├── main.py                # Ponto de entrada do Flask
-├── alembic.ini            # Configuração do Alembic
-├── pyproject.toml         # Deps gerenciadas por uv
-├── Dockerfile
-├── docker-compose.yml
-└── entrypoint.sh          # Entrypoint do container (migra + gunicorn)
+│   ├── __init__.py        # create_app: config, extensões (db, login, CSRF), handlers de erro JSON
+│   ├── models/            # User, Memorial, Comentario
+│   └── routes.py          # API /api/*, /uploads/* e fallback do SPA
+├── frontend/
+│   ├── src/
+│   │   ├── index.css      # Tailwind + tokens da identidade visual (@theme)
+│   │   ├── lib/api.ts     # Cliente HTTP (cookie de sessão + header X-CSRFToken)
+│   │   ├── lib/auth.tsx   # Contexto de autenticação (/api/me)
+│   │   ├── components/    # Modal, Toast, campos, formulário de memorial
+│   │   ├── pages/         # Landing, Auth, Painel, EditarMemorial, MemorialPublico, Admin
+│   │   └── test/          # Vitest
+│   └── vite.config.ts     # Proxy /api e /uploads → Flask em dev
+├── migrations/            # Alembic
+├── tests/                 # pytest (API)
+├── main.py                # Servidor dev do Flask
+├── Dockerfile             # Multi-stage: build do React + imagem Python
+└── docker-compose.yml
 ```
 
-## 🚀 Como Rodar
+## 🚀 Como rodar
 
-### Opção 1 — Local com uv (desenvolvimento)
+### Desenvolvimento (dois terminais)
 
-Pré-requisitos: Python 3.13+ e [uv](https://github.com/astral-sh/uv) instalados.
+Pré-requisitos: Python 3.13+, [uv](https://github.com/astral-sh/uv) e Node 22+.
 
 ```bash
-# 1. Instala as dependências
+# Terminal 1 — API Flask (porta 5001)
 uv sync
-
-# 2. Roda o servidor de desenvolvimento
-uv run python main.py
+cp .env.example .env   # ajuste SECRET_KEY, ADMIN_EMAILS...
+FLASK_DEBUG=1 uv run python main.py
 ```
-
-Acesse em <http://localhost:5001>.
-
-A porta é controlada pela variável de ambiente `PORT` (padrão: `5001`):
 
 ```bash
-PORT=5100 uv run python main.py
+# Terminal 2 — React com hot reload (porta 5173)
+cd frontend
+npm install
+npm run dev
 ```
 
-> O banco SQLite (`instance/memorial.db`) e a pasta de uploads são criados
-> automaticamente na primeira execução. O `create_app()` roda `db.create_all()`
-> apenas em bancos novos (ele é pulado quando `ALEMBIC=1` está definido).
+Acesse <http://localhost:5173>. O Vite repassa `/api` e `/uploads` para o Flask, então o
+navegador enxerga tudo na mesma origem (necessário para o cookie de sessão e o CSRF).
+Se o Flask estiver em outra porta: `FLASK_URL=http://127.0.0.1:5100 npm run dev`.
 
-### Opção 2 — Docker Compose
+### Produção local sem Docker
+
+```bash
+cd frontend && npm ci && npm run build && cd ..
+uv run gunicorn -w 3 -b 0.0.0.0:5001 main:app
+```
+
+O Flask serve `frontend/dist` em qualquer rota que não seja `/api` ou `/uploads`.
+
+### Docker Compose
 
 ```bash
 docker compose up --build -d
 ```
 
-O app roda no container na porta **8001** (mapeada para a 5001 interna), ou na porta
-definida por `PORT` no `.env`. Acesse em <http://localhost:8001>.
+O `Dockerfile` compila o React e copia o `dist` para a imagem Python. O `entrypoint.sh`
+roda `alembic upgrade head` e inicia o Gunicorn. **`SECRET_KEY` é obrigatória** no `.env`.
+Acesse em <http://localhost:8001> (ou a porta definida em `PORT`).
+
+## 🔐 Autenticação e segurança
+
+- Sessão via cookie do Flask-Login (`HttpOnly`, `SameSite=Lax`) — o React roda na mesma origem.
+- **CSRF** (Flask-WTF): o React busca o token em `GET /api/csrf` e envia `X-CSRFToken` em
+  todo `POST/PUT/PATCH/DELETE`.
+- Senhas com hash scrypt (Werkzeug), mínimo de 8 caracteres.
+- Uploads validados por tipo (imagem/vídeo/áudio), nome `uuid4`, limite `MAX_UPLOAD_MB` por envio.
+- `url_personalizada` é normalizada (`a-z0-9-`) e única (restrição no banco).
+- Admin = e-mail listado em `ADMIN_EMAILS`. Admins não podem ser excluídos pelo painel.
+
+## 🛣️ API
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/api/csrf` | Token CSRF |
+| GET | `/api/me` | Usuário logado (`usuario: null` se anônimo) |
+| POST | `/api/auth/registrar` | `{name, email, password}` — cria e já loga |
+| POST | `/api/auth/login` | `{email, password}` |
+| POST | `/api/auth/logout` | Sai |
+| GET | `/api/memoriais` | Memoriais do usuário (com todos os comentários) |
+| POST | `/api/memoriais` | Cria (multipart: campos + `logo`, `banner`, `imagens[]`, `videos[]`, `audios[]`) |
+| GET / PUT / DELETE | `/api/memoriais/<id>` | Detalha / edita (multipart) / apaga — só o dono |
+| DELETE | `/api/memoriais/<id>/arquivos` | `{filename, tipo}` remove um arquivo |
+| GET | `/api/publico/<slug>` | Memorial público (só comentários aprovados) |
+| POST | `/api/publico/<slug>/comentarios` | `{nome_autor, texto}` — fica oculto até aprovação |
+| PATCH / DELETE | `/api/comentarios/<id>` | `{is_visible}` (sem corpo = alterna) / apaga — só o dono |
+| GET | `/api/admin/usuarios` | Usuários, memoriais e totais (admin) |
+| POST | `/api/admin/usuarios/<id>/senha` | `{nova_senha}` (admin) |
+| DELETE | `/api/admin/usuarios/<id>` | Exclui usuário e memoriais (admin) |
+| GET | `/uploads/<id>/<arquivo>` | Arquivos enviados |
+
+Erros sempre em JSON: `{"erro": "mensagem", "campos": [...]}` com o status HTTP adequado
+(400 validação, 401 sem login, 403 sem permissão, 404, 409 conflito, 413 envio grande).
+
+### Rotas do frontend
+
+`/` landing · `/login` · `/registrar` · `/painel` · `/painel/memoriais/:id` (editar) ·
+`/m/:slug` (página pública) · `/admin`.
+
+## 🗄️ Migrações (Alembic)
 
 ```bash
-docker compose logs -f
-docker compose down
-```
-
-O container executa `entrypoint.sh`, que roda `alembic upgrade head` antes de iniciar
-o Gunicorn (3 workers).
-
-## 🗄️ Migrações de Banco (Alembic)
-
-O projeto usa [Alembic](https://alembic.sqlalchemy.org/) para versionar o schema do
-banco e preservar os dados em alterações futuras.
-
-### Fluxo diário
-
-Ao alterar os modelos em `app/models.py`:
-
-```bash
-# 1. Gera a nova migração automaticamente (compare com o schema atual)
-uv run alembic revision --autogenerate -m "descricao da alteracao"
-
-# 2. Confira o arquivo gerado em migrations/versions/ e ajuste se necessário
-
-# 3. Aplica a migração no banco
+uv run alembic revision --autogenerate -m "descricao"   # após alterar app/models/
 uv run alembic upgrade head
-```
-
-Verificações úteis:
-
-```bash
-# Mostra se o banco está em sincronia com os modelos
-uv run alembic check
-
-# Lista as migrações aplicadas
-uv run alembic current
-
-# Lista as migrações pendentes
-uv run alembic history --verbose
-
-# Reverte a última migração
+uv run alembic check      # modelos x banco em sincronia
 uv run alembic downgrade -1
 ```
 
-> **Nota:** o `create_app()` do Flask cria as tabelas automaticamente apenas em
-> bancos novos. Para bancos existentes, o schema passa a ser controlado pelo Alembic
-> (o `create_all` é pulado quando `ALEMBIC=1` é definido, como faz o `migrations/env.py`).
-
-### Migrando um banco criado antes do Alembic
-
-Se o banco `instance/memorial.db` já existia antes da adoção do Alembic (tabelas
-criadas pelo `create_all`), as tabelas já existem. Para não perdê-las, **marque a
-revisão inicial como aplicada** sem executar DDL:
-
-```bash
-uv run alembic stamp head
-```
-
-Depois disso, o fluxo normal de `upgrade head` funciona a partir do estado atual.
-
-## 🧩 Arquitetura do código
-
-### `app/__init__.py` — Factory e configuração
-
-- Define `create_app()` (app factory).
-- Carrega variáveis do `.env` via `python-dotenv`.
-- Instancia as extensões globais `db` (Flask-SQLAlchemy) e `login_manager`
-  (Flask-Login) **fora** da factory e as inicializa dentro dela (`db.init_app(app)`).
-- Configurações: `SECRET_KEY`, `SQLALCHEMY_DATABASE_URI` (do `DATABASE_URL` ou
-  `sqlite:///<instance_path>/memorial.db`), `UPLOAD_FOLDER`, `ADMIN_EMAILS`.
-- Registra o filtro Jinja `formatadata` (do `utils.py`).
-- Registra o blueprint `memorial` (de `routes.py`).
-- No final, roda `db.create_all()` **exceto** quando a env `ALEMBIC=1` está definida.
-
-### `app/models.py` — Modelos SQLAlchemy
-
-| Modelo | Tabela | Campos principais |
-|--------|--------|-------------------|
-| `User` | `user` | `id`, `username`, `email` (único), `password_hash`; métodos `set_password()`/`check_password()` (Werkzeug, hash scrypt) |
-| `Memorial` | `memorial` | `id`, `nome`, `nascimento`, `falecimento`, `frase_efeito`, `biografia`, `url_personalizada`, `user_id` (FK), `logo_filename`, `banner_filename`, `gallery_images`, `gallery_videos`, `gallery_audios` (listas separadas por vírgula) |
-| `Comentario` | `comentario` | `id`, `nome_autor`, `texto`, `data_criacao` (default `datetime.utcnow`), `is_visible` (default `False`), `memorial_id` (FK) |
-
-> A relação `Comentario.memorial` existe via `backref`. `User` **não** possui
-> relationship declarada para memoriais — o `routes.py` usa o fallback
-> `hasattr(u, 'memoriais')`.
-
-### `app/routes.py` — Blueprint `memorial`
-
-Contém **todas** as rotas. Helpers internos:
-
-- `allowed_file(filename)` — valida extensão contra `ALLOWED_EXTENSIONS`
-  (`png, jpg, jpeg, gif, webp, mp4, mov, mp3, wav`).
-- `is_admin_user(user=None)` — verifica se o e-mail do usuário está em `ADMIN_EMAILS`.
-- `admin_required` — decorator que retorna `403` para não-admins.
-
-### `app/utils.py` — Helpers
-
-- `formatar_data(valor_string)` — converte `YYYY-MM-DD` → `DD/MM/YYYY`
-  (registrado como filtro Jinja `formatadata`).
-
-### `app/templates/` — Jinja2
-
-| Template | Função |
-|----------|--------|
-| `landing.html` | Landing page pública de apresentação |
-| `auth/login.html` / `auth/register.html` | Formulários de autenticação |
-| `home.html` | Painel do usuário logado com seus memoriais |
-| `editar_memorial.html` | Formulário de criar/editar memorial com uploads |
-| `memorial_publico.html` | Página pública do memorial (com galeria) |
-| `admin.html` | Painel administrativo |
-
-### `app/static/` — Frontend
-
-- `css/user.css` — estilo das páginas autenticadas (painel, edição, admin).
-- `css/memorial_publicado.css` — estilo da página pública do memorial.
-- `js/user.js` — toasts, modais e diálogo de confirmação (`showToast`,
-  `openModal`/`closeModal`, `confirmDialog`).
-- `js/memorial_publicado.js` — loading screen e botões "Mostrar mais" da biografia.
-
-### `main.py` — Entry point
-
-```python
-import os
-from app import create_app, db
-
-app = create_app()
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
-```
-
-### Uploads
-
-Os arquivos são salvos em `<UPLOAD_FOLDER>/<memorial_id>/` (padrão:
-`instance/uploads/<id>/`). Nomes são gerados com `uuid4().hex` + extensão original
-(evita colisões e paths maliciosos). `logo_filename`/`banner_filename` guardam um
-único nome; `gallery_*` guardam listas separadas por vírgula. A rota
-`/uploads/<memorial_id>/<path:filename>` serve os arquivos com `send_from_directory`
-(seguro contra Directory Traversal).
-
-## 🛡️ Painel de Administração
-
-O sistema possui um painel administrativo em `/admin` (disponível após login) que
-permite listar todos os usuários, ver seus memoriais, visualizar o **hash** das senhas,
-redefinir senhas e excluir contas.
-
-Para se tornar administrador, defina a lista de e-mails autorizados na variável de
-ambiente `ADMIN_EMAILS` (separados por vírgula):
-
-```bash
-# localmente
-ADMIN_EMAILS=admin@example.com uv run python main.py
-
-# no docker-compose, adicione em environment:
-#   ADMIN_EMAILS: admin@example.com
-```
-
-> **Segurança:** as senhas são armazenadas com **hash** (scrypt) via Werkzeug — nunca em
-> texto plano. O painel exibe o hash e permite *redefinir* a senha de um usuário, mas
-> não é possível recuperar a senha original. Admins não podem excluir outros admins.
+O `create_app()` roda `db.create_all()` apenas quando `ALEMBIC` ≠ `1` (o `migrations/env.py`
+define `ALEMBIC=1`). Banco criado antes do Alembic: use `uv run alembic stamp 5eda9a7f3788`
+e depois `uv run alembic upgrade head`.
 
 ## 🧪 Testes
 
 ```bash
-uv run pytest
+uv run pytest                          # API + migrações (SQLite temporário)
+cd frontend && npm test && npm run build   # Vitest + typecheck/build
 ```
-
-Os testes usam um banco SQLite temporário isolado (fixtures em `tests/conftest.py`),
-portanto nunca tocam no `instance/memorial.db` real.
-
-| Arquivo | Cobertura |
-|---------|-----------|
-| `tests/conftest.py` | Fixtures `app`, `client` e `auth` (registra/loga/desloga) |
-| `tests/test_routes.py` | Landing, auth, memoriais, comentários, autorização (403) e admin |
-| `tests/test_migrations.py` | Valida `upgrade`/`downgrade` das migrações Alembic |
-
-## 🛣️ Rotas principais
-
-| Método | Rota                          | Descrição                                   |
-|--------|-------------------------------|---------------------------------------------|
-| GET    | `/`                           | Landing page de apresentação                |
-| GET    | `/registrar`                  | Formulário de registro                      |
-| GET/POST | `/login`                    | Login                                       |
-| GET    | `/logout`                     | Logout (requer login)                       |
-| GET    | `/m`                          | Painel com os memoriais do usuário (login)  |
-| GET    | `/m/<url_personalizada>`      | Página pública do memorial                  |
-| POST   | `/m/create`                   | Criar memorial (login)                      |
-| GET/POST | `/m/edit/<id>`              | Editar memorial (dono)                      |
-| POST   | `/m/delete/<id>`              | Excluir memorial (dono)                     |
-| POST   | `/m/<id>/comentar`            | Comentar um memorial (público)              |
-| POST   | `/m/<id>/delete_file/<arquivo>/<tipo>` | Exclui um arquivo (dono, JSON)     |
-| POST   | `/comentario/<id>/toggle`     | Aprovar/ocultar comentário (dono)           |
-| POST   | `/comentario/<id>/apagar`     | Apagar comentário (dono)                    |
-| GET    | `/uploads/<id>/<arquivo>`     | Servir arquivos de upload                   |
-| GET    | `/admin`                      | Painel administrativo (admin)               |
-| POST   | `/admin/usuario/<id>/resetar-senha` | Redefine senha de um usuário (admin)  |
-| POST   | `/admin/usuario/<id>/excluir` | Exclui usuário e memoriais (admin)          |
 
 ## ⚙️ Variáveis de ambiente
 
 | Variável | Padrão | Descrição |
-|----------|--------|-----------|
-| `SECRET_KEY` | `dev` | Chave secreta do Flask (use valor seguro em produção) |
-| `DATABASE_URL` | `sqlite:///<instance>/memorial.db` | URL do banco (vazia = SQLite padrão) |
+|---|---|---|
+| `SECRET_KEY` | `dev` (com aviso) | Chave do Flask — obrigatória em produção |
+| `DATABASE_URL` | `sqlite:///<instance>/memorial.db` | URL do banco (Postgres: `postgresql://...`) |
 | `UPLOAD_FOLDER` | `<instance>/uploads` | Pasta de uploads |
-| `ADMIN_EMAILS` | vazio | E-mails autorizados no painel `/admin` |
-| `PORT` | `5001` | Porta do servidor dev |
-| `ALEMBIC` | — | Se `1`, pula `create_all()` (usado pelo Alembic) |
+| `MAX_UPLOAD_MB` | `50` | Limite por envio |
+| `ADMIN_EMAILS` | vazio | E-mails com acesso ao `/admin` |
+| `FRONTEND_DIST` | `frontend/dist` | Build do React servido pelo Flask |
+| `PORT` / `HOST` | `5001` / `127.0.0.1` | Servidor dev (`main.py`) |
+| `FLASK_DEBUG` | `0` | `1` liga o debugger (nunca em produção) |
+| `ALEMBIC` | — | `1` pula `create_all()` |

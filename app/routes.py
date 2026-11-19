@@ -1,17 +1,73 @@
-import shutil
-import uuid
-from flask import Blueprint, abort, jsonify, render_template, request, redirect, send_from_directory, url_for, flash, current_app
-from flask_login import current_user, login_required, login_user, logout_user
-from .models import User, Memorial, Comentario
-from . import db
-from urllib.parse import urlparse, urljoin # Importado para a validação do redirect
-from werkzeug.utils import secure_filename
+# /app/routes.py
+#
+# Backend do Memorial: API JSON consumida pelo frontend React (pasta frontend/).
+# Todas as rotas de dados ficam sob /api. Além delas, este blueprint:
+#   - serve os arquivos enviados (/uploads/<memorial_id>/<arquivo>);
+#   - serve o build do React (frontend/dist) para qualquer outra URL (SPA).
+#
+# Autenticação: cookie de sessão do Flask-Login (mesma origem do React).
+# Proteção CSRF: Flask-WTF. O React busca o token em /api/csrf e o envia no
+# header X-CSRFToken em toda requisição que altera dados (POST/PUT/PATCH/DELETE).
 
 import os
+import re
+import shutil
+import unicodedata
+import uuid
+from datetime import timezone
+from functools import wraps
+
+from flask import (
+    Blueprint, abort, current_app, jsonify, request, send_from_directory,
+)
+from flask_login import current_user, login_required, login_user, logout_user
+from flask_wtf.csrf import generate_csrf
+
+from . import db
+from .models import Comentario, Memorial, User
+
 bp = Blueprint('memorial', __name__)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp', 'mp4', 'mov', 'mp3', 'wav'}
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Extensões aceitas por tipo de mídia. Validar por tipo evita, por exemplo,
+# que um .mp3 seja enviado no campo de imagens da galeria.
+EXT_IMAGEM = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+EXT_VIDEO = {'mp4', 'mov', 'webm'}
+EXT_AUDIO = {'mp3', 'wav', 'ogg', 'm4a'}
+
+# Mapeia o "tipo" usado pela API -> (campo do multipart, extensões, coluna no modelo).
+# logo/banner são arquivos únicos; as galerias guardam nomes separados por vírgula.
+TIPOS_ARQUIVO = {
+    'logo': ('logo', EXT_IMAGEM, 'logo_filename'),
+    'banner': ('banner', EXT_IMAGEM, 'banner_filename'),
+    'imagem': ('imagens', EXT_IMAGEM, 'gallery_images'),
+    'video': ('videos', EXT_VIDEO, 'gallery_videos'),
+    'audio': ('audios', EXT_AUDIO, 'gallery_audios'),
+}
+TIPOS_UNICOS = ('logo', 'banner')
+TIPOS_GALERIA = ('imagem', 'video', 'audio')
+
+CAMPOS_MEMORIAL = ('nome', 'nascimento', 'falecimento', 'frase_efeito', 'biografia', 'url_personalizada')
+TAMANHO_MINIMO_SENHA = 8
+
+
+# ============================================================
+# HELPERS
+# ============================================================
+def erro(mensagem, status=400, **extra):
+    """Resposta de erro padrão da API: {"erro": "..."} + status HTTP."""
+    return jsonify({'erro': mensagem, **extra}), status
+
+
+def dados_requisicao():
+    """Lê o corpo como JSON; se não for JSON, cai para o form (multipart)."""
+    return request.get_json(silent=True) or request.form
+
+
+def texto(dados, campo):
+    """Pega um campo de texto já sem espaços nas pontas ('' se ausente)."""
+    valor = dados.get(campo)
+    return valor.strip() if isinstance(valor, str) else ''
+
 
 def is_admin_user(user=None):
     user = user or current_user
@@ -19,8 +75,8 @@ def is_admin_user(user=None):
         return False
     return user.email in current_app.config.get('ADMIN_EMAILS', [])
 
+
 def admin_required(func):
-    from functools import wraps
     @wraps(func)
     def wrapper(*args, **kwargs):
         if not is_admin_user():
@@ -28,480 +84,484 @@ def admin_required(func):
         return func(*args, **kwargs)
     return wrapper
 
-#--- landing route ---
-@bp.route('/')
-def landing():
-    return render_template('landing.html')
 
-#--- index route ---
-@bp.route('/m')
-@login_required
-def index():
-    memoriais = Memorial.query.filter_by(user_id=current_user.id).all()
+def normalizar_slug(valor):
+    """
+    Converte um texto livre em slug seguro para URL.
+    Ex.: 'Maria José da Silva!' -> 'maria-jose-da-silva'
+    """
+    valor = unicodedata.normalize('NFKD', valor or '').encode('ascii', 'ignore').decode('ascii')
+    valor = re.sub(r'[^a-z0-9]+', '-', valor.lower())
+    return valor.strip('-')[:200]
 
-    return render_template('home.html', user=current_user, memoriais=memoriais, is_admin=is_admin_user())
 
-#--- view memorial route ---
-@bp.route('/m/<url_personalizada>')
-def view_memorial(url_personalizada):
-    # Busca o memorial pela URL personalizada. Se não encontrar, retorna 404.
-    memorial = Memorial.query.filter_by(url_personalizada=url_personalizada).first_or_404()
-    
-    # É uma boa prática preparar URLs completas aqui, em vez de na template,
-    # embora url_for funcione bem em ambos os lugares.
-    
-    return render_template('memorial_publico.html', memorial=memorial)
+def pasta_memorial(memorial_id):
+    return os.path.join(current_app.config['UPLOAD_FOLDER'], str(memorial_id))
 
-#--- add comment route ---
-@bp.route('/m/<int:memorial_id>/comentar', methods=['POST'])
-def add_comment(memorial_id):
-    memorial = Memorial.query.get_or_404(memorial_id)
-    
-    if request.method == 'POST':
-        nome = request.form.get('nome_autor')
-        texto_comentario = request.form.get('texto')
-        
-        novo_comentario = Comentario(
-            nome_autor=nome,
-            texto=texto_comentario,
-            memorial_id=memorial.id
-            # is_visible já é False por padrão
-        )
-        
-        db.session.add(novo_comentario)
-        db.session.commit()
-        
-        flash('Sua mensagem foi enviada com sucesso e aguarda aprovação!', 'success')
-        
-        # Redireciona de volta para a mesma página do memorial
-        return redirect(url_for('memorial.view_memorial', url_personalizada=memorial.url_personalizada))
 
-#--- toggle comment visibility route ---
-@bp.route('/comentario/<int:comment_id>/toggle', methods=['POST'])
-@login_required
-def toggle_comment(comment_id):
-    comentario = Comentario.query.get_or_404(comment_id)
-    # Verificação de segurança crucial
-    if comentario.memorial.user_id != current_user.id:
+def extensao(filename):
+    return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
+
+def lista_galeria(valor):
+    """Converte a string 'a.jpg,b.jpg' do banco em lista (ignorando vazios)."""
+    return [f for f in (valor or '').split(',') if f]
+
+
+def url_arquivo(memorial_id, filename):
+    return f'/uploads/{memorial_id}/{filename}'
+
+
+def arquivos_enviados():
+    """
+    Coleta os arquivos do request agrupados por tipo e valida as extensões
+    ANTES de salvar qualquer coisa (assim um arquivo inválido não deixa lixo no disco).
+    Retorna (dict tipo -> [FileStorage], mensagem_de_erro | None).
+    """
+    por_tipo = {}
+    for tipo, (campo, extensoes, _coluna) in TIPOS_ARQUIVO.items():
+        arquivos = [f for f in request.files.getlist(campo) if f and f.filename]
+        if tipo in TIPOS_UNICOS:
+            arquivos = arquivos[:1]
+        for f in arquivos:
+            if extensao(f.filename) not in extensoes:
+                aceitas = ', '.join(sorted(extensoes))
+                return None, f'Arquivo "{f.filename}" não é aceito em {campo}. Use: {aceitas}.'
+        por_tipo[tipo] = arquivos
+    return por_tipo, None
+
+
+def salvar_upload(file, pasta):
+    """Salva o arquivo com nome único (uuid4 + extensão original) e retorna o nome gerado."""
+    nome_unico = f'{uuid.uuid4().hex}.{extensao(file.filename)}'
+    file.save(os.path.join(pasta, nome_unico))
+    return nome_unico
+
+
+def remover_arquivo(memorial_id, filename):
+    """Apaga um arquivo da pasta do memorial, se existir. basename() impede '../'."""
+    if not filename:
+        return
+    caminho = os.path.join(pasta_memorial(memorial_id), os.path.basename(filename))
+    if os.path.isfile(caminho):
+        os.remove(caminho)
+
+
+def aplicar_arquivos(memorial, por_tipo):
+    """
+    Salva os arquivos enviados e atualiza o memorial.
+    - logo/banner: substitui e apaga o arquivo antigo do disco (evita órfãos);
+    - galerias: acrescenta aos arquivos já existentes.
+    """
+    pasta = pasta_memorial(memorial.id)
+    os.makedirs(pasta, exist_ok=True)
+    antigos = []
+    for tipo, arquivos in por_tipo.items():
+        if not arquivos:
+            continue
+        coluna = TIPOS_ARQUIVO[tipo][2]
+        if tipo in TIPOS_UNICOS:
+            antigos.append(getattr(memorial, coluna))
+            setattr(memorial, coluna, salvar_upload(arquivos[0], pasta))
+        else:
+            nomes = lista_galeria(getattr(memorial, coluna))
+            nomes += [salvar_upload(f, pasta) for f in arquivos]
+            setattr(memorial, coluna, ','.join(nomes))
+    return antigos  # o chamador apaga os antigos só depois do commit
+
+
+def validar_campos_memorial(dados, memorial_id=None):
+    """Valida os campos de texto do memorial. Retorna (valores, erro | None)."""
+    valores = {campo: texto(dados, campo) for campo in CAMPOS_MEMORIAL}
+    faltando = [campo for campo, v in valores.items() if not v]
+    if faltando:
+        return None, ('Preencha todos os campos obrigatórios.', {'campos': faltando})
+
+    slug = normalizar_slug(valores['url_personalizada'])
+    if not slug:
+        return None, ('URL personalizada inválida. Use letras, números e hífens.', {'campos': ['url_personalizada']})
+    existente = Memorial.query.filter_by(url_personalizada=slug).first()
+    if existente and existente.id != memorial_id:
+        return None, ('Esta URL personalizada já está em uso. Escolha outra.', {'campos': ['url_personalizada'], 'status': 409})
+    valores['url_personalizada'] = slug
+    return valores, None
+
+
+def comentario_to_dict(c):
+    return {
+        'id': c.id,
+        'nome_autor': c.nome_autor,
+        'texto': c.texto,
+        # O banco guarda UTC "ingênuo" (sem fuso); marcamos como UTC para o navegador converter.
+        'data_criacao': c.data_criacao.replace(tzinfo=timezone.utc).isoformat() if c.data_criacao else None,
+        'is_visible': c.is_visible,
+    }
+
+
+def memorial_to_dict(m, publico=False):
+    """
+    Serializa o memorial para a API.
+    publico=True: só comentários visíveis (página pública).
+    publico=False: todos os comentários (painel do dono).
+    """
+    def arquivo(nome):
+        return {'filename': nome, 'url': url_arquivo(m.id, nome)} if nome else None
+
+    comentarios = sorted(m.comentarios, key=lambda c: c.data_criacao or 0, reverse=True)
+    if publico:
+        comentarios = [c for c in comentarios if c.is_visible]
+
+    return {
+        'id': m.id,
+        'nome': m.nome,
+        'nascimento': m.nascimento,
+        'falecimento': m.falecimento,
+        'frase_efeito': m.frase_efeito,
+        'biografia': m.biografia,
+        'url_personalizada': m.url_personalizada,
+        'logo': arquivo(m.logo_filename),
+        'banner': arquivo(m.banner_filename),
+        'imagens': [arquivo(n) for n in lista_galeria(m.gallery_images)],
+        'videos': [arquivo(n) for n in lista_galeria(m.gallery_videos)],
+        'audios': [arquivo(n) for n in lista_galeria(m.gallery_audios)],
+        'comentarios': [comentario_to_dict(c) for c in comentarios],
+    }
+
+
+def usuario_to_dict(u):
+    return {'id': u.id, 'nome': u.username, 'email': u.email, 'is_admin': is_admin_user(u)}
+
+
+def memorial_do_dono(memorial_id):
+    """Busca o memorial (404) e garante que pertence ao usuário logado (403)."""
+    memorial = db.get_or_404(Memorial, memorial_id)
+    if memorial.user_id != current_user.id:
         abort(403)
-        
-    # A lógica de toggle: inverte o valor booleano
-    comentario.is_visible = not comentario.is_visible
-    db.session.commit()
-    
-    if comentario.is_visible:
-        flash(f'Comentário de {comentario.nome_autor} agora está visível.', 'success')
-    else:
-        flash(f'Comentário de {comentario.nome_autor} foi ocultado.', 'info')
-        
-    # Redireciona de volta para o painel principal
-    return redirect(url_for('memorial.index'))
+    return memorial
 
-#--- delete comment route ---
-@bp.route('/comentario/<int:comment_id>/apagar', methods=['POST'])
+
+# ============================================================
+# SESSÃO / CSRF / AUTENTICAÇÃO
+# ============================================================
+@bp.route('/api/csrf')
+def csrf():
+    # O React chama esta rota uma vez ao carregar e guarda o token em memória.
+    return jsonify({'csrf_token': generate_csrf()})
+
+
+@bp.route('/api/me')
+def me():
+    # Retorna 200 com usuario=null quando não logado (evita erro no console do navegador).
+    if not current_user.is_authenticated:
+        return jsonify({'usuario': None})
+    return jsonify({'usuario': usuario_to_dict(current_user)})
+
+
+@bp.route('/api/auth/registrar', methods=['POST'])
+def register():
+    dados = dados_requisicao()
+    name, email, password = texto(dados, 'name'), texto(dados, 'email').lower(), dados.get('password') or ''
+
+    if not name or not email or not password:
+        return erro('Preencha nome, e-mail e senha.')
+    if '@' not in email or len(email) > 120:
+        return erro('Informe um e-mail válido.')
+    if len(password) < TAMANHO_MINIMO_SENHA:
+        return erro(f'A senha deve ter pelo menos {TAMANHO_MINIMO_SENHA} caracteres.')
+
+    # VALIDAÇÃO: Verifica se o e-mail já existe
+    if User.query.filter(db.func.lower(User.email) == email).first():
+        return erro('Este e-mail já está cadastrado. Por favor, tente fazer login.', 409)
+
+    new_user = User(username=name[:80], email=email)
+    new_user.set_password(password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    # Já entra logado após o cadastro (melhor experiência no SPA).
+    login_user(new_user)
+    return jsonify({'usuario': usuario_to_dict(new_user)}), 201
+
+
+@bp.route('/api/auth/login', methods=['POST'])
+def login():
+    dados = dados_requisicao()
+    email, password = texto(dados, 'email').lower(), dados.get('password') or ''
+
+    user = User.query.filter(db.func.lower(User.email) == email).first()
+    if not user or not user.check_password(password):
+        return erro('E-mail ou senha inválidos. Por favor, tente novamente.', 401)
+
+    login_user(user)
+    return jsonify({'usuario': usuario_to_dict(user)})
+
+
+@bp.route('/api/auth/logout', methods=['POST'])
+def logout():
+    logout_user()
+    return jsonify({'ok': True})
+
+
+# ============================================================
+# MEMORIAIS (área do dono)
+# ============================================================
+@bp.route('/api/memoriais')
 @login_required
-def delete_comment(comment_id):
-    comentario = Comentario.query.get_or_404(comment_id)
-    # Verificação de segurança
-    if comentario.memorial.user_id != current_user.id:
-        abort(403)
-        
-    db.session.delete(comentario)
-    db.session.commit()
-    flash('Comentário apagado permanentemente.', 'info')
-    
-    # --- APENAS ESTA LINHA MUDA ---
-    return redirect(url_for('memorial.index'))
+def listar_memoriais():
+    memoriais = Memorial.query.filter_by(user_id=current_user.id).order_by(Memorial.id.desc()).all()
+    return jsonify({'memoriais': [memorial_to_dict(m) for m in memoriais]})
 
-#-- create memorial route ---
-@bp.route('/m/create', methods=['POST'])
+
+@bp.route('/api/memoriais', methods=['POST'])
 @login_required
 def create():
-    # --- Parte 1: Obter dados do formulário ---
-    nome = request.form.get('nome')
-    nascimento = request.form.get('nascimento')
-    falecimento = request.form.get('falecimento')
-    frase_efeito = request.form.get('frase_efeito')
-    biografia = request.form.get('biografia')
-    url_personalizada = request.form.get('url_personalizada')
+    # --- Parte 1: Validar dados e arquivos ANTES de gravar qualquer coisa ---
+    valores, problema = validar_campos_memorial(request.form)
+    if problema:
+        msg, extra = problema
+        return erro(msg, extra.pop('status', 400), **extra)
+    por_tipo, msg = arquivos_enviados()
+    if msg:
+        return erro(msg)
 
-    # --- Parte 2: Criar o objeto Memorial (sem os nomes dos arquivos ainda) ---
-    new_memorial = Memorial(
-        nome=nome, nascimento=nascimento, falecimento=falecimento, frase_efeito=frase_efeito,
-        biografia=biografia, url_personalizada=url_personalizada, user_id=current_user.id
-    )
-    db.session.add(new_memorial)
-
+    # --- Parte 2: Criar o objeto e usar flush() para obter o ID (nome da pasta) ---
+    memorial = Memorial(**valores, user_id=current_user.id)
+    db.session.add(memorial)
     try:
-        # --- Parte 3: Usar flush() para obter o ID ---
         db.session.flush()
-        
-        # --- Parte 4: Criar diretório e processar arquivos ---
-        memorial_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(new_memorial.id))
-        os.makedirs(memorial_path, exist_ok=True)
-
-        # --- FUNÇÕES AUXILIARES MODIFICADAS ---
-        
-        # Esta função agora gera um nome único e o retorna
-        def save_and_get_unique_filename(file, target_path):
-            if file and file.filename != '' and allowed_file(file.filename):
-                # Pega a extensão original do arquivo (ex: '.jpg')
-                extension = os.path.splitext(file.filename)[1]
-                # Gera um nome de arquivo aleatório e único com a extensão original
-                unique_filename = f"{uuid.uuid4().hex}{extension}"
-                
-                file.save(os.path.join(target_path, unique_filename))
-                return unique_filename
-            return None
-
-        # --- LÓGICA DE SALVAMENTO ATUALIZADA ---
-        
-        # Salva os arquivos únicos e atualiza o objeto
-        logo_file = request.files.get('logo_upload')
-        banner_file = request.files.get('banner_upload')
-        
-        logo_saved_name = save_and_get_unique_filename(logo_file, memorial_path)
-        if logo_saved_name:
-            new_memorial.logo_filename = logo_saved_name
-            
-        banner_saved_name = save_and_get_unique_filename(banner_file, memorial_path)
-        if banner_saved_name:
-            new_memorial.banner_filename = banner_saved_name
-
-        # Salva os arquivos das galerias
-        image_filenames = []
-        video_filenames = []
-        audio_filenames = []
-
-        for file in request.files.getlist('images_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                image_filenames.append(saved_name)
-
-        for file in request.files.getlist('videos_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                video_filenames.append(saved_name)
-
-        for file in request.files.getlist('audios_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                audio_filenames.append(saved_name)
-
-        # Junta os NOMES ÚNICOS gerados em uma string
-        if image_filenames:
-            new_memorial.gallery_images = ",".join(image_filenames)
-        if video_filenames:
-            new_memorial.gallery_videos = ",".join(video_filenames)
-        if audio_filenames:
-            new_memorial.gallery_audios = ",".join(audio_filenames)
-
+        # --- Parte 3: Salvar arquivos e confirmar ---
+        aplicar_arquivos(memorial, por_tipo)
         db.session.commit()
-        flash(f'Memorial para {nome} criado com sucesso!', 'success')
-
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        flash(f'Ocorreu um erro ao criar o memorial: {e}', 'danger')
+        if memorial.id:
+            shutil.rmtree(pasta_memorial(memorial.id), ignore_errors=True)
+        current_app.logger.exception('Erro ao criar memorial')
+        return erro('Ocorreu um erro ao criar o memorial. Tente novamente.', 500)
 
-    return redirect(url_for('memorial.index'))
+    return jsonify({'memorial': memorial_to_dict(memorial)}), 201
 
-#-- delete memorial route ---
-@bp.route('/m/delete/<int:id>', methods=['POST'])
+
+@bp.route('/api/memoriais/<int:memorial_id>')
 @login_required
-def delete(id):
-    # 1. Busca o memorial no banco de dados. Se não encontrar, retorna erro 404 (Not Found).
-    memorial = Memorial.query.get_or_404(id)
+def detalhar_memorial(memorial_id):
+    return jsonify({'memorial': memorial_to_dict(memorial_do_dono(memorial_id))})
 
-    # 2. VERIFICAÇÃO DE PERMISSÃO (AUTORIZAÇÃO)
-    # Garante que o usuário logado é o dono do memorial. Se não for, retorna erro 403 (Forbidden).
-    if memorial.user_id != current_user.id:
-        abort(403)
 
-    # 3. LÓGICA PARA APAGAR A PASTA E OS ARQUIVOS
-    # É importante fazer isso ANTES de apagar o registro do banco.
-    try:
-        memorial_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(memorial.id))
-        
-        # Verifica se o diretório existe antes de tentar apagá-lo
-        if os.path.exists(memorial_path):
-            # shutil.rmtree apaga a pasta e TUDO que estiver dentro dela
-            shutil.rmtree(memorial_path)
-            
-    except Exception as e:
-        # Se houver um erro ao apagar os arquivos (ex: permissão), exibe uma mensagem de erro.
-        flash(f"Ocorreu um erro ao apagar os arquivos do memorial: {e}", "danger")
-        return redirect(url_for('memorial.index'))
+@bp.route('/api/memoriais/<int:memorial_id>', methods=['PUT'])
+@login_required
+def edit_memorial(memorial_id):
+    memorial = memorial_do_dono(memorial_id)
 
-    # 4. APAGA O REGISTRO DO BANCO DE DADOS
-    db.session.delete(memorial)
+    valores, problema = validar_campos_memorial(request.form, memorial_id=memorial.id)
+    if problema:
+        msg, extra = problema
+        return erro(msg, extra.pop('status', 400), **extra)
+    por_tipo, msg = arquivos_enviados()
+    if msg:
+        return erro(msg)
+
+    # Atualiza os campos do memorial com os dados do formulário
+    for campo, valor in valores.items():
+        setattr(memorial, campo, valor)
+    # Atualiza os arquivos (logo, banner, galerias) se novos arquivos forem enviados
+    antigos = aplicar_arquivos(memorial, por_tipo)
     db.session.commit()
 
-    flash("Memorial apagado com sucesso.", "success")
-    return redirect(url_for('memorial.index'))
+    # Só depois do commit apagamos o logo/banner substituídos.
+    for nome in antigos:
+        remover_arquivo(memorial.id, nome)
+    return jsonify({'memorial': memorial_to_dict(memorial)})
 
-#-- edit memorial route ---
-@bp.route('/m/edit/<int:id>', methods=['GET', 'POST'])
+
+@bp.route('/api/memoriais/<int:memorial_id>', methods=['DELETE'])
 @login_required
-def edit_memorial(id):
-    memorial = Memorial.query.get_or_404(id)
+def delete(memorial_id):
+    # Busca + verificação de permissão (dono), via helper.
+    memorial = memorial_do_dono(memorial_id)
 
-    # Verificação de autorização
-    if memorial.user_id != current_user.id:
+    # Apaga o registro (comentários vão junto pelo cascade) e depois a pasta com
+    # TODOS os arquivos. Se apagar a pasta falhar, o registro já não existe e a
+    # pasta vira lixo inofensivo — melhor que um memorial apontando para arquivos inexistentes.
+    db.session.delete(memorial)
+    db.session.commit()
+    shutil.rmtree(pasta_memorial(memorial_id), ignore_errors=True)
+    return jsonify({'ok': True})
+
+
+@bp.route('/api/memoriais/<int:memorial_id>/arquivos', methods=['DELETE'])
+@login_required
+def delete_file(memorial_id):
+    memorial = memorial_do_dono(memorial_id)
+    dados = dados_requisicao()
+    filename, tipo = texto(dados, 'filename'), texto(dados, 'tipo')
+
+    if tipo not in TIPOS_ARQUIVO or not filename:
+        return erro('Parâmetros inválidos.')
+
+    coluna = TIPOS_ARQUIVO[tipo][2]
+    # Segurança: só apaga do disco se o arquivo realmente pertence a este memorial.
+    if tipo in TIPOS_UNICOS:
+        if getattr(memorial, coluna) != filename:
+            return erro('Arquivo não encontrado neste memorial.', 404)
+        setattr(memorial, coluna, None)
+    else:
+        nomes = lista_galeria(getattr(memorial, coluna))
+        if filename not in nomes:
+            return erro('Arquivo não encontrado neste memorial.', 404)
+        nomes.remove(filename)
+        setattr(memorial, coluna, ','.join(nomes) or None)
+
+    db.session.commit()
+    remover_arquivo(memorial.id, filename)
+    return jsonify({'memorial': memorial_to_dict(memorial)})
+
+
+# ============================================================
+# COMENTÁRIOS
+# ============================================================
+@bp.route('/api/comentarios/<int:comment_id>', methods=['PATCH'])
+@login_required
+def toggle_comment(comment_id):
+    comentario = db.get_or_404(Comentario, comment_id)
+    # Verificação de segurança crucial: só o dono do memorial modera.
+    if comentario.memorial.user_id != current_user.id:
         abort(403)
 
-    if request.method == 'POST':
-        # Atualiza os campos do memorial com os dados do formulário
-        memorial.nome = request.form.get('nome')
-        memorial.nascimento = request.form.get('nascimento')
-        memorial.falecimento = request.form.get('falecimento')
-        memorial.frase_efeito = request.form.get('frase_efeito')
-        memorial.biografia = request.form.get('biografia')
-        memorial.url_personalizada = request.form.get('url_personalizada')
+    dados = request.get_json(silent=True) or {}
+    if isinstance(dados.get('is_visible'), bool):
+        comentario.is_visible = dados['is_visible']
+    else:
+        # A lógica de toggle: inverte o valor booleano
+        comentario.is_visible = not comentario.is_visible
+    db.session.commit()
+    return jsonify({'comentario': comentario_to_dict(comentario)})
 
-        #ATUALIZAR os arquivos (logo, banner, galerias) se novos arquivos forem enviados
-        memorial_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(memorial.id))
-        os.makedirs(memorial_path, exist_ok=True)
-        def save_and_get_unique_filename(file, target_path):
-            if file and file.filename != '' and allowed_file(file.filename):
-                extension = os.path.splitext(file.filename)[1]
-                unique_filename = f"{uuid.uuid4().hex}{extension}"
-                file.save(os.path.join(target_path, unique_filename))
-                return unique_filename
-            return None
-        logo_file = request.files.get('logo_upload')
-        banner_file = request.files.get('banner_upload')
-        logo_saved_name = save_and_get_unique_filename(logo_file, memorial_path)
-        if logo_saved_name:
-            memorial.logo_filename = logo_saved_name
-        banner_saved_name = save_and_get_unique_filename(banner_file, memorial_path)
-        if banner_saved_name:
-            memorial.banner_filename = banner_saved_name
-        image_filenames = memorial.gallery_images.split(',') if memorial.gallery_images else []
-        video_filenames = memorial.gallery_videos.split(',') if memorial.gallery_videos else []
-        audio_filenames = memorial.gallery_audios.split(',') if memorial.gallery_audios else []
-        for file in request.files.getlist('images_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                image_filenames.append(saved_name)
-        for file in request.files.getlist('videos_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                video_filenames.append(saved_name)
-        for file in request.files.getlist('audios_upload'):
-            saved_name = save_and_get_unique_filename(file, memorial_path)
-            if saved_name:
-                audio_filenames.append(saved_name)
-        if image_filenames:
-            memorial.gallery_images = ",".join(image_filenames)
-        if video_filenames:
-            memorial.gallery_videos = ",".join(video_filenames)
-        if audio_filenames:
-            memorial.gallery_audios = ",".join(audio_filenames)
-        
-        
-        db.session.commit()
-        flash('Memorial atualizado com sucesso!', 'success')
-        return redirect(url_for('memorial.index'))
-    return render_template('editar_memorial.html', memorial=memorial)
 
-#-- delete file route ---
-@bp.route('/m/<int:memorial_id>/delete_file/<string:filename>/<string:file_type>', methods=['POST'])
+@bp.route('/api/comentarios/<int:comment_id>', methods=['DELETE'])
 @login_required
-def delete_file(memorial_id, filename, file_type):
-    memorial = Memorial.query.get_or_404(memorial_id)
-
-    # Verificação de autorização (está perfeita!)
-    if memorial.user_id != current_user.id:
+def delete_comment(comment_id):
+    comentario = db.get_or_404(Comentario, comment_id)
+    if comentario.memorial.user_id != current_user.id:
         abort(403)
+    db.session.delete(comentario)
+    db.session.commit()
+    return jsonify({'ok': True})
 
-    # 1. REMOVIDA a linha que pegava file_type do form. Usamos o da URL.
 
-    if not filename or not file_type:
-        # 2. Responde com JSON de erro
-        return jsonify({'success': False, 'message': 'Parâmetros inválidos'}), 400
+# ============================================================
+# PÁGINA PÚBLICA
+# ============================================================
+@bp.route('/api/publico/<slug>')
+def view_memorial(slug):
+    # Busca o memorial pela URL personalizada. Se não encontrar, retorna 404.
+    memorial = Memorial.query.filter_by(url_personalizada=slug).first_or_404()
+    return jsonify({'memorial': memorial_to_dict(memorial, publico=True)})
 
-    memorial_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(memorial.id))
-    file_path = os.path.join(memorial_path, filename)
 
-    try:
-        if not os.path.exists(file_path):
-             # Se o arquivo não existe, apenas limpe o DB e reporte sucesso.
-             # Não há necessidade de parar o processo aqui.
-             pass
-        else:
-            os.remove(file_path)
+@bp.route('/api/publico/<slug>/comentarios', methods=['POST'])
+def add_comment(slug):
+    memorial = Memorial.query.filter_by(url_personalizada=slug).first_or_404()
+    dados = dados_requisicao()
+    nome, texto_comentario = texto(dados, 'nome_autor'), texto(dados, 'texto')
 
-        # Lógica de atualização do banco de dados (está perfeita!)
-        if file_type == 'logo' and memorial.logo_filename == filename:
-            memorial.logo_filename = None
-        elif file_type == 'banner' and memorial.banner_filename == filename:
-            memorial.banner_filename = None
-        elif file_type == 'image':
-            images = memorial.gallery_images.split(',') if memorial.gallery_images else []
-            if filename in images:
-                images.remove(filename)
-                memorial.gallery_images = ','.join(images) if images else None
-        elif file_type == 'video':
-            videos = memorial.gallery_videos.split(',') if memorial.gallery_videos else []
-            if filename in videos:
-                videos.remove(filename)
-                memorial.gallery_videos = ','.join(videos) if videos else None
-        elif file_type == 'audio':
-            audios = memorial.gallery_audios.split(',') if memorial.gallery_audios else []
-            if filename in audios:
-                audios.remove(filename)
-                memorial.gallery_audios = ','.join(audios) if audios else None
-        else:
-            return jsonify({'success': False, 'message': 'Tipo de arquivo inválido'}), 400
+    if not nome or not texto_comentario:
+        return erro('Informe seu nome e sua mensagem.')
+    if len(nome) > 100 or len(texto_comentario) > 5000:
+        return erro('Nome (até 100) ou mensagem (até 5000 caracteres) muito longos.')
 
-        db.session.commit()
-        
-        # 3. Responde com JSON de sucesso!
-        return jsonify({'success': True, 'message': 'Arquivo apagado com sucesso.'})
+    # is_visible já é False por padrão: o dono precisa aprovar.
+    novo_comentario = Comentario(nome_autor=nome, texto=texto_comentario, memorial_id=memorial.id)
+    db.session.add(novo_comentario)
+    db.session.commit()
+    return jsonify({'mensagem': 'Sua mensagem foi enviada com sucesso e aguarda aprovação!'}), 201
 
-    except Exception as e:
-        # 4. Responde com JSON em caso de erro inesperado
-        db.session.rollback() # Importante reverter a transação em caso de erro
-        return jsonify({'success': False, 'message': str(e)}), 500
-#--- route to serve uploaded files ---
+
+# ============================================================
+# ADMIN
+# ============================================================
+@bp.route('/api/admin/usuarios')
+@login_required
+@admin_required
+def admin():
+    usuarios = User.query.order_by(User.id).all()
+    dados = []
+    for u in usuarios:
+        # User não tem relationship 'memoriais'; filtramos pelo user_id.
+        memoriais = Memorial.query.filter_by(user_id=u.id).all()
+        dados.append({
+            **usuario_to_dict(u),
+            'memoriais': [
+                {'id': m.id, 'nome': m.nome, 'url_personalizada': m.url_personalizada,
+                 'total_comentarios': len(m.comentarios)}
+                for m in memoriais
+            ],
+            'total_memoriais': len(memoriais),
+            'total_comentarios': sum(len(m.comentarios) for m in memoriais),
+        })
+    return jsonify({'usuarios': dados})
+
+
+@bp.route('/api/admin/usuarios/<int:user_id>/senha', methods=['POST'])
+@login_required
+@admin_required
+def admin_reset_password(user_id):
+    usuario = db.get_or_404(User, user_id)
+    nova_senha = (dados_requisicao().get('nova_senha') or '').strip()
+
+    if len(nova_senha) < TAMANHO_MINIMO_SENHA:
+        return erro(f'A nova senha deve ter pelo menos {TAMANHO_MINIMO_SENHA} caracteres.')
+
+    usuario.set_password(nova_senha)
+    db.session.commit()
+    return jsonify({'mensagem': f'Senha do usuário "{usuario.username}" redefinida com sucesso.'})
+
+
+@bp.route('/api/admin/usuarios/<int:user_id>', methods=['DELETE'])
+@login_required
+@admin_required
+def admin_delete_user(user_id):
+    usuario = db.get_or_404(User, user_id)
+
+    if is_admin_user(usuario):
+        return erro('Não é possível excluir um administrador.', 403)
+
+    # Exclui os memoriais do usuário (com arquivos no disco)
+    memorials = Memorial.query.filter_by(user_id=user_id).all()
+    ids = [m.id for m in memorials]
+    for m in memorials:
+        db.session.delete(m)
+    db.session.delete(usuario)
+    db.session.commit()
+    for mid in ids:
+        shutil.rmtree(pasta_memorial(mid), ignore_errors=True)
+    return jsonify({'mensagem': f'Usuário "{usuario.username}" e todos os seus memoriais foram excluídos.'})
+
+
+# ============================================================
+# ARQUIVOS ENVIADOS E FRONTEND (SPA)
+# ============================================================
 @bp.route('/uploads/<int:memorial_id>/<path:filename>')
 def uploaded_file(memorial_id, filename):
     """
     Serve um arquivo de upload para um memorial específico.
     Usa send_from_directory para segurança contra ataques de 'Directory Traversal'.
     """
-    # Cria o caminho para a pasta específica do memorial
-    directory = os.path.join(current_app.config['UPLOAD_FOLDER'], str(memorial_id))
-    
-    # Envia o arquivo solicitado a partir desse diretório
-    return send_from_directory(directory, filename)
-
-# --- REGISTRATION AND LOGIN ROUTES ---
-@bp.route('/registrar', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-
-        # VALIDAÇÃO: Verifica se o e-mail já existe
-        existing_user = User.query.filter_by(email=email).first()
-        if existing_user:
-            flash('Este e-mail já está cadastrado. Por favor, tente fazer login.', 'danger')
-            return redirect(url_for('memorial.register'))
-
-        # Se o e-mail for novo, prossiga
-        new_user = User(username=name, email=email)
-        new_user.set_password(password)
-
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash(f'Usuário {name} registrado com sucesso! Faça o login.', 'success')
-        return redirect(url_for('memorial.login')) 
-    
-    # Para o método GET
-    return render_template("auth/register.html")
-
-@bp.route("/login", methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        # CORREÇÃO: Usando o nome do blueprint 'memorial'
-        return redirect(url_for('memorial.index'))  
-
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        
-        user = User.query.filter_by(email=email).first()
-
-        if user and user.check_password(password):
-            login_user(user)
-            
-            # VALIDAÇÃO DE SEGURANÇA: Prevenção de Open Redirect
-            next_page = request.form.get('next')
-            if next_page and urlparse(next_page).netloc == '':
-                # Se 'next_page' for um caminho local, redirecione para ele
-                return redirect(next_page)
-            else:
-                # Caso contrário, redirecione para a página inicial
-                return redirect(url_for('memorial.index'))
-        else:
-            # MELHORIA UX: Mostra erro na própria página de login
-            flash('E-mail ou senha inválidos. Por favor, tente novamente.', 'danger')
-            return redirect(url_for('memorial.login'))
-    
-    # Para o método GET
-    return render_template("auth/login.html")
-
-@bp.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    flash('Você saiu do sistema.', 'info')
-    return redirect(url_for('memorial.index'))
-#--- END REGISTRATION AND LOGIN ROUTES ---
-
-# ============================================================
-# ADMIN
-# ============================================================
-@bp.route('/admin')
-@login_required
-@admin_required
-def admin():
-    usuarios = User.query.order_by(User.id).all()
-
-    dados = []
-    for u in usuarios:
-        memoriais = u.memoriais if hasattr(u, 'memoriais') else Memorial.query.filter_by(user_id=u.id).all()
-        total_comentarios = sum(len(m.comentarios) for m in memoriais)
-        dados.append({
-            'usuario': u,
-            'memoriais': memoriais,
-            'total_memoriais': len(memoriais),
-            'total_comentarios': total_comentarios,
-        })
-
-    return render_template('admin.html', dados=dados, admin_emails=current_app.config.get('ADMIN_EMAILS', []))
+    return send_from_directory(pasta_memorial(memorial_id), filename)
 
 
-@bp.route('/admin/usuario/<int:user_id>/resetar-senha', methods=['POST'])
-@login_required
-@admin_required
-def admin_reset_password(user_id):
-    usuario = User.query.get_or_404(user_id)
-    nova_senha = request.form.get('nova_senha', '').strip()
-
-    if len(nova_senha) < 6:
-        flash('A nova senha deve ter pelo menos 6 caracteres.', 'danger')
-        return redirect(url_for('memorial.admin'))
-
-    usuario.set_password(nova_senha)
-    db.session.commit()
-    flash(f'Senha do usuário "{usuario.username}" redefinida com sucesso.', 'success')
-    return redirect(url_for('memorial.admin'))
-
-
-@bp.route('/admin/usuario/<int:user_id>/excluir', methods=['POST'])
-@login_required
-@admin_required
-def admin_delete_user(user_id):
-    usuario = User.query.get_or_404(user_id)
-
-    if is_admin_user(usuario):
-        flash('Não é possível excluir outro administrador.', 'danger')
-        return redirect(url_for('memorial.admin'))
-
-    # Exclui os memoriais do usuário (com arquivos no disco)
-    memorials = Memorial.query.filter_by(user_id=user_id).all()
-    for m in memorials:
-        memory_path = os.path.join(current_app.config['UPLOAD_FOLDER'], str(m.id))
-        if os.path.exists(memory_path):
-            shutil.rmtree(memory_path, ignore_errors=True)
-        db.session.delete(m)
-
-    db.session.delete(usuario)
-    db.session.commit()
-    flash(f'Usuário "{usuario.username}" e todos os seus memoriais foram excluídos.', 'success')
-    return redirect(url_for('memorial.admin'))
-#--- END ADMIN ---
+@bp.route('/', defaults={'path': ''})
+@bp.route('/<path:path>')
+def spa(path):
+    """
+    Serve o build do React. Arquivos existentes (assets, logo) são enviados
+    diretamente; qualquer outra rota cai no index.html e o React Router decide.
+    """
+    if path.startswith('api/'):
+        abort(404)
+    dist = current_app.config['FRONTEND_DIST']
+    if path and os.path.isfile(os.path.join(dist, path)):
+        return send_from_directory(dist, path)
+    if not os.path.isfile(os.path.join(dist, 'index.html')):
+        return ('Frontend não compilado. Rode: cd frontend && npm install && npm run build', 503)
+    return send_from_directory(dist, 'index.html')
