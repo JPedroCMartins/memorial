@@ -55,6 +55,13 @@ dependências e roda `alembic upgrade head`. Ajustes por variável: `API_PORT`, 
 (dev), `PORT`, `HOST`, `WORKERS` (prod) e `SKIP_INSTALL=1`. O modo `prod` exige uma
 `SECRET_KEY` real.
 
+O `run.sh` é POSIX `sh` (não precisa de bash), então roda direto no Alpine:
+
+```bash
+apk add uv nodejs npm
+sh run.sh
+```
+
 ### Desenvolvimento (dois terminais)
 
 Pré-requisitos: Python 3.13+, [uv](https://github.com/astral-sh/uv) e Node 22+.

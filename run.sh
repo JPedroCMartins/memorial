@@ -1,6 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # ============================================================
 # Memorial — roda backend (Flask) e frontend (React) sem Docker
+# Script POSIX sh: funciona no ash/busybox (Alpine), dash e bash.
 #
 # Uso:
 #   ./run.sh            # = ./run.sh dev
@@ -15,11 +16,11 @@
 #   WORKERS=3        workers do Gunicorn no modo prod
 #   SKIP_INSTALL=1   pula `uv sync` / `npm install`
 #
-# Pré-requisitos: uv (https://github.com/astral-sh/uv) e Node 22+ (npm).
+# Pré-requisitos: uv e Node 20+ (npm). No Alpine: apk add uv nodejs npm
 # ============================================================
-set -euo pipefail
+set -eu
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 cd "$ROOT"
 
 MODO="${1:-dev}"
@@ -32,11 +33,10 @@ precisa() {
 }
 
 checar_requisitos() {
-    precisa uv "Instale com: curl -LsSf https://astral.sh/uv/install.sh | sh"
-    precisa node "Instale o Node 22+ (ex.: via nvm ou pacote da distro)."
-    precisa npm "Instale o npm junto com o Node."
+    precisa uv "No Alpine: apk add uv (ou curl -LsSf https://astral.sh/uv/install.sh | sh)"
+    precisa node "No Alpine: apk add nodejs npm (Node 20+)."
+    precisa npm "No Alpine: apk add npm."
 
-    local node_major
     node_major="$(node -p 'process.versions.node.split(".")[0]')"
     if [ "$node_major" -lt 20 ]; then
         falha "Node $node_major detectado; use Node 20+ (recomendado 22)."
@@ -49,7 +49,7 @@ checar_requisitos() {
 }
 
 instalar_deps() {
-    [ "${SKIP_INSTALL:-0}" = "1" ] && return
+    [ "${SKIP_INSTALL:-0}" = "1" ] && return 0
     info "Instalando dependências Python (uv sync)..."
     uv sync "$@"
     info "Instalando dependências do frontend..."
@@ -65,51 +65,70 @@ migrar() {
     uv run --no-sync alembic upgrade head
 }
 
+# PIDs dos processos em background do modo dev (lista separada por espaço).
+PIDS=""
+
+# Mata um processo e todos os descendentes (ex.: uv -> python -> reloader do Flask).
+# Usa `pgrep -P` (presente no busybox do Alpine e no procps); não depende de TTY.
+matar_arvore() {
+    for filho in $(pgrep -P "$1" 2>/dev/null); do
+        matar_arvore "$filho"
+    done
+    kill -TERM "$1" 2>/dev/null || true
+}
+
+encerrar() {
+    trap - INT TERM EXIT
+    info "Encerrando..."
+    for pid in $PIDS; do
+        matar_arvore "$pid"
+    done
+    wait 2>/dev/null || true
+}
+
 modo_dev() {
-    local api_port="${API_PORT:-5001}"
-    local web_port="${WEB_PORT:-5173}"
+    api_port="${API_PORT:-5001}"
+    web_port="${WEB_PORT:-5173}"
 
     checar_requisitos
     instalar_deps
     migrar
 
-    # Cada processo em background ganha seu próprio grupo de processos, para que
-    # o encerramento pegue também os filhos (ex.: o reloader do Flask).
-    set -m
-    local pids=()
-    encerrar() {
-        trap - INT TERM EXIT
-        info "Encerrando..."
-        for pid in "${pids[@]}"; do
-            kill -TERM -- "-$pid" 2>/dev/null || true
-        done
-        wait 2>/dev/null || true
-    }
     # Ctrl+C, kill ou um dos dois processos cair: derruba ambos.
-    trap encerrar INT TERM EXIT
+    trap 'encerrar; exit 130' INT
+    trap 'encerrar; exit 143' TERM
+    trap encerrar EXIT
 
     info "Iniciando API Flask em http://127.0.0.1:${api_port}"
     FLASK_DEBUG=1 PORT="$api_port" uv run --no-sync python main.py &
-    pids+=($!)
+    PIDS="$PIDS $!"
 
     info "Iniciando React (Vite) em http://localhost:${web_port}"
     (cd frontend && FLASK_URL="http://127.0.0.1:${api_port}" \
         exec npm run dev -- --port "$web_port" --strictPort) &
-    pids+=($!)
+    PIDS="$PIDS $!"
 
     info "Acesse http://localhost:${web_port}  (Ctrl+C para parar)"
-    # Sai assim que qualquer um dos dois terminar.
-    wait -n "${pids[@]}"
+    # `wait -n` não existe em POSIX sh: verifica a cada segundo se algum caiu.
+    while :; do
+        for pid in $PIDS; do
+            if ! kill -0 "$pid" 2>/dev/null; then
+                info "Um dos processos terminou (PID $pid)."
+                exit 1
+            fi
+        done
+        sleep 1
+    done
 }
 
 modo_prod() {
-    local port="${PORT:-5001}"
-    local host="${HOST:-0.0.0.0}"
-    local workers="${WORKERS:-3}"
+    port="${PORT:-5001}"
+    host="${HOST:-0.0.0.0}"
+    workers="${WORKERS:-3}"
 
     checar_requisitos
-    if [ -z "${SECRET_KEY:-}" ] && grep -qE '^SECRET_KEY=(mude-esta-chave-em-producao)?\s*$' .env; then
-        falha "Defina uma SECRET_KEY de verdade no .env (python -c 'import secrets; print(secrets.token_hex(32))')."
+    if [ -z "${SECRET_KEY:-}" ] && grep -qE '^SECRET_KEY=(mude-esta-chave-em-producao)?[[:space:]]*$' .env; then
+        falha "Defina uma SECRET_KEY de verdade no .env (python3 -c 'import secrets; print(secrets.token_hex(32))')."
     fi
     instalar_deps --no-dev
 
@@ -125,6 +144,6 @@ modo_prod() {
 case "$MODO" in
     dev) modo_dev ;;
     prod) modo_prod ;;
-    -h|--help|help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) falha "Modo desconhecido: '$MODO'. Use: ./run.sh [dev|prod]" ;;
 esac
